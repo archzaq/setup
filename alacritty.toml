@@ -1,0 +1,8 @@
+import = ["~/.config/alacritty/alacritty-master/dracula.toml"]
+
+[window]
+opacity = 0.98
+blur = true
+
+[font]
+size = 16.00
