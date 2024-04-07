@@ -9,7 +9,7 @@
 
 archInstallArray=("neovim" "neofetch" "htop" "ranger" "wl-clipboard" "flatpak" "git" "remmina")
 flatpakInstallArray=("io.gitlab.librewolf-community" "org.signal.Signal" "com.github.tchx84.Flatseal" "com.spotify.Client" "com.brave.Browser" "com.discordapp.Discord")
-macOSInstallArray=("gh" "git" "neofetch" "neovim" "node" "tmux")
+macOSInstallArray=("gh" "git" "neofetch" "neovim" "node" "ranger" "tmux")
 macOSInstallCaskArray=("alacritty" "bitwarden" "discord" "github" "imazing-profile-editor" "pppc-utility" "rectangle" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
 arch=false
 fedora=false
