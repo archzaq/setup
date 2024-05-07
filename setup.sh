@@ -199,6 +199,7 @@ function main() {
     # If arch, install using pacman and flatpak, then configure bashrc
     if [ "$arch" == true ];
     then
+		echo "XDG_DATA_DIR=\"/usr/local/share:/usr/share\"" | sudo tee -a /etc/environment
         arch_install
         flatpak_install
         configrc_setup bashrc
