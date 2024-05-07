@@ -175,7 +175,7 @@ function configrc_setup() {
         echo "alias ll='ls -la --color=auto'" >> ~/."$1"
         echo "alias notes='cd ~/Documents/Notes/ && ls'" >> ~/."$1"
         echo "alias scripts='cd ~/Documents/Scripts/ && ls'" >> ~/."$1"
-		echo "alias neofetch=\"echo 'did you mean fastfetch?'\"" >> ~/."$1"
+        echo "alias neofetch=\"echo 'did you mean fastfetch?'\"" >> ~/."$1"
         echo "export EDITOR=/usr/bin/nvim" >> ~/."$1"
     fi
     source ~/."$1"
@@ -199,7 +199,7 @@ function main() {
     # If arch, install using pacman and flatpak, then configure bashrc
     if [ "$arch" == true ];
     then
-		echo "XDG_DATA_DIR=\"/usr/local/share:/usr/share\"" | sudo tee -a /etc/environment
+        echo "XDG_DATA_DIR=\"/usr/local/share:/usr/share\"" | sudo tee -a /etc/environment
         arch_install
         flatpak_install
         configrc_setup bashrc
