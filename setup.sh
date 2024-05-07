@@ -7,7 +7,7 @@
 # - Other cool things        #
 ##############################
 
-archInstallArray=("neovim" "neofetch" "htop" "ranger" "wl-clipboard" "flatpak" "git" "remmina")
+archInstallArray=("alacritty" "fastfetch" "flatpak" "git" "htop" "neovim" "nodejs" "ranger" "remmina" "tmux" "unzip" "wl-clipboard" "zip")
 flatpakInstallArray=("io.gitlab.librewolf-community" "org.signal.Signal" "com.github.tchx84.Flatseal" "com.spotify.Client" "com.brave.Browser" "com.discordapp.Discord")
 macOSInstallArray=("gh" "git" "neofetch" "neovim" "node" "ranger" "tmux")
 macOSInstallCaskArray=("alacritty" "bitwarden" "discord" "github" "google-chrome" "imazing-profile-editor" "librewolf" "mullvad-browser" "mullvadvpn" "pppc-utility" "rectangle" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
@@ -155,25 +155,6 @@ function flatpak_install() {
     done
 }
 
-# Work in progress, similar issue to oh-mh-zsh
-function alacritty_compile() {
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-    . "$HOME/.cargo/env"
-    rustup override set stable
-    rustup update stable
-    git clone https://github.com/alacritty/alacritty.git --directory ~/Apps/alacritty
-    cd ~/Apps/alacritty
-    cargo build --release
-    sudo cp target/release/alacritty /usr/local/bin
-    sudo cp extra/logo/alacritty-term.svg /usr/share/pixmaps/Alacritty.svg
-    sudo desktop-file-install extra/linux/Alacritty.desktop
-    sudo update-desktop-database
-    mkdir -p ~/.bash_completion
-    cp extra/completions/alacritty.bash ~/.bash_completion/alacritty
-    echo "source ~/.bash_completion/alacritty" >> ~/.bashrc
-    cd ~
-}
-
 # Setup alacritty configuration file
 function alacritty_setup() {
     curl -fLo ~/.config/alacritty/master.zip https://github.com/dracula/alacritty/archive/master.zip
@@ -194,6 +175,7 @@ function configrc_setup() {
         echo "alias ll='ls -la --color=auto'" >> ~/."$1"
         echo "alias notes='cd ~/Documents/Notes/ && ls'" >> ~/."$1"
         echo "alias scripts='cd ~/Documents/Scripts/ && ls'" >> ~/."$1"
+		echo "alias neofetch=\"echo 'did you mean fastfetch?'\"" >> ~/."$1"
         echo "export EDITOR=/usr/bin/nvim" >> ~/."$1"
     fi
     source ~/."$1"
@@ -218,19 +200,15 @@ function main() {
     if [ "$arch" == true ];
     then
         arch_install
-        sudo pacman -S cmake freetype2 fontconfig pkg-config make libxcb libxkbcommon python --noconfirm
         flatpak_install
         configrc_setup bashrc
-        # alacritty_compile
 
     # If fedora, install using dnf and flatpak, then configure bashrc
     elif [ "$fedora" == true ];
     then
         fedora_install
-        sudo dnf install -y cmake freetype-devel fontconfig-devel libxcb-devel libxkbcommon-devel g++
         flatpak_install
         configrc_setup bashrc
-        # alacritty_compile
 
     # If macOS, install using brew, then configure zshrc
     elif [ "$macOS" == true ];
