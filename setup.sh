@@ -67,7 +67,7 @@ function macOS_install() {
         brew install "$brewInstall"
     done
 
-    # Ask to install other apps
+    # Ask to install additional apps
     if other_apps;
     then
         for caskInstall in "${macOSInstallCaskArray[@]}";
@@ -98,6 +98,8 @@ function macOS_install() {
         else
             open "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension"
         fi
+    else
+        brew install --cask alacritty
     fi
 
     # Remove gross bits from the Dock
@@ -168,15 +170,16 @@ function alacritty_setup() {
     else
         echo "Alacritty master.zip not found"
     fi
-    cp "$scriptDir/alacritty.toml" ~/.config/alacritty/
 
     curl -fLo ~/Library/Fonts/Meslo.zip --create-dirs https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip   
     if [ -f ~/Library/Fonts/Meslo.zip ];
     then
         unzip ~/Library/Fonts/Meslo.zip -d ~/Library/Fonts/Meslo/
     else
-        echo "Meslo font not found"
+        echo "Meslo font pack not found"
     fi
+
+    cp "$scriptDir/alacritty.toml" ~/.config/alacritty/
 }
 
 # Setup bashrc/zshrc with alias and editor
@@ -202,11 +205,25 @@ function neovim_setup() {
     curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 }
 
+function confirm_check() {
+    acceptArray=("yes" "ye" "y")
+    answer="$1"
+    for option in "${acceptArray[@]}";
+    do
+        if [[ "$answer" == "$option" ]];
+        then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 function other_apps() {
     read -p "Would you like to install additional applications? " ans
     lowerAns=$(echo "$ans" | tr '[:upper:]' '[:lower:]')
 
-    if [[ "$lowerAns" == "yes" ]];
+    if confirm_check "$lowerAns";
     then
         return 0
     else
