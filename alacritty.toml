@@ -6,3 +6,7 @@ blur = true
 
 [font]
 size = 16.00
+
+[font.normal]
+family = "MesloLGL Nerd Font Mono"
+style = "Regular"

@@ -61,16 +61,20 @@ function macOS_install() {
         /usr/sbin/softwareupdate --install-rosetta --agree-to-license
     fi
 
-    # homebrew install applications and casks
+    # Homebrew install applications and casks
     for brewInstall in "${macOSInstallArray[@]}";
     do
         brew install "$brewInstall"
     done
 
-    for caskInstall in "${macOSInstallCaskArray[@]}";
-    do
-        brew install --cask "$caskInstall"
-    done
+    # Ask to install other apps
+    if other_apps;
+    then
+        for caskInstall in "${macOSInstallCaskArray[@]}";
+        do
+            brew install --cask "$caskInstall"
+        done
+    fi
 
     # oh-my-zsh setup
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
@@ -97,7 +101,7 @@ function macOS_install() {
     fi
 
     # Remove gross bits from the Dock
-    cp ~/Library/Preferences/com.apple.dock.plist ~/Libary/Preferences/com.apple.dock.OGbackup.plist
+    cp ~/Library/Preferences/com.apple.dock.plist ~/Library/Preferences/com.apple.dock.OGbackup.plist
     for i in {1..14};
     do
         /usr/bin/plutil -remove 'persistent-apps.2' ~/Library/Preferences/com.apple.dock.plist
@@ -165,6 +169,14 @@ function alacritty_setup() {
         echo "Alacritty master.zip not found"
     fi
     cp "$scriptDir/alacritty.toml" ~/.config/alacritty/
+
+    curl -fLo ~/Library/Fonts/Meslo.zip --create-dirs https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip   
+    if [ -f ~/Library/Fonts/Meslo.zip ];
+    then
+        unzip ~/Library/Fonts/Meslo.zip -d ~/Library/Fonts/Meslo/
+    else
+        echo "Meslo font not found"
+    fi
 }
 
 # Setup bashrc/zshrc with alias and editor
@@ -188,6 +200,18 @@ function neovim_setup() {
         cp "$scriptDir/init.vim" ~/.config/nvim/init.vim
     fi
     curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+}
+
+function other_apps() {
+    read -p "Would you like to install additional applications? " ans
+    lowerAns=$(echo "$ans" | tr '[:upper:]' '[:lower:]')
+
+    if [[ "$lowerAns" == "yes" ]];
+    then
+        return 0
+    else
+        return 1
+    fi
 }
 
 # Do the thing
