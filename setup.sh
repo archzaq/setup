@@ -54,6 +54,7 @@ function macOS_install() {
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
 
+    # Check device architecture
     if [ $(/usr/bin/uname -p) == 'arm' ];
     then
         (echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> /Users/$USER/.zprofile
@@ -61,19 +62,23 @@ function macOS_install() {
         /usr/sbin/softwareupdate --install-rosetta --agree-to-license
     fi
 
-    # Homebrew install applications and casks
-    for brewInstall in "${macOSInstallArray[@]}";
-    do
-        brew install "$brewInstall"
-    done
-
-    # Ask to install additional apps
-    if user_Prompt;
+    # Check again for homebrew before using binary
+    if command -v brew &> /dev/null;
     then
-        for caskInstall in "${macOSInstallCaskArray[@]}";
+        # Homebrew install applications and casks
+        for brewInstall in "${macOSInstallArray[@]}";
         do
-            brew install --cask "$caskInstall"
+            brew install "$brewInstall"
         done
+
+        # Ask to install additional apps
+        if user_Prompt;
+        then
+            for caskInstall in "${macOSInstallCaskArray[@]}";
+            do
+                brew install --cask "$caskInstall"
+            done
+        fi
     fi
 
     # oh-my-zsh setup
