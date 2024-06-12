@@ -9,7 +9,7 @@
 
 archInstallArray=("alacritty" "fastfetch" "flatpak" "git" "htop" "neovim" "nodejs" "ranger" "remmina" "tmux" "unzip" "wl-clipboard" "zip")
 flatpakInstallArray=("io.gitlab.librewolf-community" "org.signal.Signal" "com.github.tchx84.Flatseal" "com.spotify.Client" "com.brave.Browser" "com.discordapp.Discord")
-macOSInstallArray=("gh" "git" "neofetch" "neovim" "node" "ranger" "tmux")
+macOSInstallArray=("fastfetch" "gh" "git" "neofetch" "neovim" "node" "ranger" "tmux")
 macOSInstallCaskArray=("alacritty" "bitwarden" "discord" "github" "google-chrome" "imazing-profile-editor" "librewolf" "mullvad-browser" "mullvadvpn" "pppc-utility" "rectangle" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
 arch=false
 fedora=false
@@ -68,7 +68,7 @@ function macOS_install() {
     done
 
     # Ask to install additional apps
-    if other_apps;
+    if user_Prompt;
     then
         for caskInstall in "${macOSInstallCaskArray[@]}";
         do
@@ -116,6 +116,31 @@ function macOS_install() {
     fi
 
     /usr/bin/killall Dock
+}
+
+# Dialog box to inform user of the overall process taking place
+function user_Prompt() {
+    userPrompt=$(osascript <<OOP
+    set userPrompt to (display dialog "Would you like to install additional apps?" buttons {"Cancel", "Continue"} default button "Continue" with title "Additional Applications" giving up after 900)
+    if button returned of userPrompt is equal to "Continue" then
+        return "Continue"
+    else
+        return "timeout"
+    end if
+OOP
+    )
+    if [[ $? != 0 ]];
+    then
+        echo "Log: User selected cancel"
+        return 1
+    elif [[ "$userPrompt" == 'Continue' ]];
+    then
+        echo "Log: User selected \"Continue\" to download additional apps"
+        return 0
+    else
+        echo "Log: Reprompting with the first dialog box"
+        user_Prompt
+    fi
 }
 
 # Create common folders
@@ -203,32 +228,6 @@ function neovim_setup() {
         cp "$scriptDir/init.vim" ~/.config/nvim/init.vim
     fi
     curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-}
-
-function confirm_check() {
-    acceptArray=("yes" "ye" "y")
-    answer="$1"
-    for option in "${acceptArray[@]}";
-    do
-        if [[ "$answer" == "$option" ]];
-        then
-            return 0
-        fi
-    done
-
-    return 1
-}
-
-function other_apps() {
-    read -p "Would you like to install additional applications? " ans
-    lowerAns=$(echo "$ans" | tr '[:upper:]' '[:lower:]')
-
-    if confirm_check "$lowerAns";
-    then
-        return 0
-    else
-        return 1
-    fi
 }
 
 # Do the thing
