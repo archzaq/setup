@@ -1,16 +1,17 @@
 #!/bin/bash
 
-##############################
-# - Setup usual home folders #
-# - Install some packages    #
-# - Configure neovim         #
-# - Other cool things        #
-##############################
+##################################
+###   Author: Zac Reeves       ###
+### - Setup usual home folders ###
+### - Install some packages    ###
+### - Configure neovim         ###
+### - Other cool things        ###
+##################################
 
 archInstallArray=("alacritty" "fastfetch" "flatpak" "git" "htop" "neovim" "nodejs" "ranger" "remmina" "tmux" "unzip" "wl-clipboard" "zip")
 flatpakInstallArray=("io.gitlab.librewolf-community" "org.signal.Signal" "com.github.tchx84.Flatseal" "com.spotify.Client" "com.brave.Browser" "com.discordapp.Discord")
 macOSInstallArray=("fastfetch" "gh" "git" "jq" "neofetch" "neovim" "node" "ranger" "tmux")
-macOSInstallCaskArray=("alacritty" "bitwarden" "discord" "github" "google-chrome" "imazing-profile-editor" "librewolf" "mullvad-browser" "mullvadvpn" "pppc-utility" "rectangle" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
+macOSInstallCaskArray=("alacritty" "discord" "github" "google-chrome" "imazing-profile-editor" "librewolf" "mullvad-browser" "mullvadvpn" "pppc-utility" "rectangle" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
 arch=false
 fedora=false
 macOS=false
@@ -46,6 +47,32 @@ function fedora_install() {
     echo "WIP"
 }
 
+function macOS_Rename() {
+    deviceName=$(osascript <<OOP
+    set deviceName to (display dialog "Please enter your desired device name" buttons {"Cancel", "OK"} default button "OK" default answer "" with title "Device Naming" giving up after 900)
+	    if button returned of deviceName is equal to "OK" then
+	        return text returned of deviceName
+	    else
+	        return ""
+	    end if
+OOP
+    )
+    if [[ $? != 0 ]];
+    then
+        echo "Selected cancel"
+        return 0
+	elif [[ -z "$deviceName" ]];
+	then
+        echo "No name entered"
+        macOS_Rename
+    else
+        /usr/sbin/scutil --set ComputerName $deviceName
+        /usr/sbin/scutil --set LocalHostName $deviceName
+        /usr/sbin/scutil --set HostName $deviceName
+        return 0
+    fi
+}
+
 # Install homebrew, rosetta if needed, a bunch of brew apps, then setup oh-my-zsh
 function macOS_install() {
     # Install homebrew
@@ -57,18 +84,22 @@ function macOS_install() {
     # Check device architecture
     if [ $(/usr/bin/uname -p) == 'arm' ];
     then
-        (echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> /Users/$USER/.zprofile
         eval "$(/opt/homebrew/bin/brew shellenv)"
         /usr/sbin/softwareupdate --install-rosetta --agree-to-license
     fi
 
     # Check again for homebrew before using binary
-    if command -v brew &> /dev/null;
+    if command -v brew &>/dev/null;
     then
         # Homebrew install applications and casks
         for brewInstall in "${macOSInstallArray[@]}";
         do
-            brew install "$brewInstall"
+            if brew list "$brewInstall" &>/dev/null;
+            then
+                echo "$brewInstall already installed"
+            else
+                brew install "$brewInstall"
+            fi
         done
 
         # Ask to install additional apps
@@ -76,7 +107,12 @@ function macOS_install() {
         then
             for caskInstall in "${macOSInstallCaskArray[@]}";
             do
-                brew install --cask "$caskInstall"
+                if brew list --cask "$caskInstall" &>/dev/null;
+                then
+                    echo "$caskInstall already installed"
+                else
+                    brew install --cask "$caskInstall"
+                fi
             done
         fi
     fi
@@ -108,19 +144,30 @@ function macOS_install() {
     fi
 
     # Remove gross bits from the Dock
-    cp ~/Library/Preferences/com.apple.dock.plist ~/Library/Preferences/com.apple.dock.OGbackup.plist
-    for i in {1..14};
-    do
-        /usr/bin/plutil -remove 'persistent-apps.2' ~/Library/Preferences/com.apple.dock.plist
-    done
+    customDockCheck=$(/usr/bin/defaults read ~/Library/Preferences/com.apple.dock.plist persistent-apps | grep 'file-label')
+    dockCount=$(echo "$customDockCheck" | grep -c 'file-label')
 
-    if [[ ! $(/usr/bin/plutil -lint ~/Library/Preferences/com.apple.dock.plist) == *'OK'* ]];
+    if [[ ! "$customDockCheck" == *"Alacritty"* ]];
     then
-        mv ~/Library/Preferences/com.apple.dock.plist ~/Library/Preferences/com.apple.dock.failed.plist
-        mv ~/Library/Preferences/com.apple.dock.OGbackup.plist ~/Library/Preferences/com.apple.dock.plist
+        cp ~/Library/Preferences/com.apple.dock.plist ~/Library/Preferences/com.apple.dock.OGbackup.plist
+        for i in $(/usr/bin/seq 3 $dockCount);
+        do
+            /usr/bin/plutil -remove 'persistent-apps.2' ~/Library/Preferences/com.apple.dock.plist
+        done
+
+        if [[ ! $(/usr/bin/plutil -lint ~/Library/Preferences/com.apple.dock.plist) == *'OK'* ]];
+        then
+            mv ~/Library/Preferences/com.apple.dock.plist ~/Library/Preferences/com.apple.dock.failed.plist
+            mv ~/Library/Preferences/com.apple.dock.OGbackup.plist ~/Library/Preferences/com.apple.dock.plist
+        fi
+        
+        /usr/bin/killall Dock
     fi
 
-    /usr/bin/killall Dock
+    if macOS_Rename;
+    then
+        echo "Device renamed to $deviceName"
+    fi
 }
 
 # Dialog box to inform user of the overall process taking place
@@ -143,7 +190,7 @@ OOP
         echo "Log: User selected \"Continue\" to download additional apps"
         return 0
     else
-        echo "Log: Reprompting with the first dialog box"
+        echo "Log: Reprompting with dialog box"
         user_Prompt
     fi
 }
@@ -219,7 +266,7 @@ function configrc_setup() {
         echo "alias ls='ls -l --color=auto'" >> ~/."$1"
         echo "alias ll='ls -la --color=auto'" >> ~/."$1"
         echo "alias notes='cd ~/Documents/Notes/ && ls'" >> ~/."$1"
-        echo "alias scripts='cd ~/Documents/Scripts/ && ls'" >> ~/."$1"
+        echo "alias scripts='cd ~/OneDrive\ -\ Saint\ Louis\ University/_JAMF/Scripts && ls'" >> ~/."$1"
         echo "alias neofetch=\"echo 'did you mean fastfetch?'\"" >> ~/."$1"
         echo "export EDITOR=/usr/bin/nvim" >> ~/."$1"
     fi
@@ -273,3 +320,4 @@ function main() {
 }
 
 main
+
