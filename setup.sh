@@ -158,7 +158,7 @@ function macOS_install() {
         if [[ ! $(/usr/bin/plutil -lint ~/Library/Preferences/com.apple.dock.plist) == *'OK'* ]];
         then
             mv ~/Library/Preferences/com.apple.dock.plist ~/Library/Preferences/com.apple.dock.failed.plist
-            mv ~/Library/Preferences/com.apple.dock.OGbackup.plist ~/Library/Preferences/com.apple.dock.plist
+            cp ~/Library/Preferences/com.apple.dock.OGbackup.plist ~/Library/Preferences/com.apple.dock.plist
         fi
         
         /usr/bin/killall Dock
@@ -195,7 +195,7 @@ OOP
     fi
 }
 
-# Create common folders
+# Create my common folders
 function create_folderz() {
     if [ ! -d ~/Apps ];
     then
