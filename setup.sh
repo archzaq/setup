@@ -60,7 +60,7 @@ OOP
     if [[ $? != 0 ]];
     then
         echo "Selected cancel"
-        return 0
+        return 1
 	elif [[ -z "$deviceName" ]];
 	then
         echo "No name entered"
