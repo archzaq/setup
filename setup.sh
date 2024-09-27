@@ -11,7 +11,7 @@
 archInstallArray=("alacritty" "fastfetch" "flatpak" "git" "htop" "neovim" "nodejs" "ranger" "remmina" "tmux" "unzip" "wl-clipboard" "zip")
 flatpakInstallArray=("io.gitlab.librewolf-community" "org.signal.Signal" "com.github.tchx84.Flatseal" "com.spotify.Client" "com.brave.Browser" "com.discordapp.Discord")
 macOSInstallArray=("fastfetch" "gh" "git" "jq" "neofetch" "neovim" "node" "ranger" "tmux")
-macOSInstallCaskArray=("alacritty" "discord" "github" "google-chrome" "imazing-profile-editor" "librewolf" "mullvad-browser" "mullvadvpn" "pppc-utility" "rectangle" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
+macOSInstallCaskArray=("alacritty" "discord" "google-chrome" "imazing-profile-editor" "librewolf" "mullvad-browser" "mullvadvpn" "pppc-utility" "rectangle" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
 arch=false
 fedora=false
 macOS=false
