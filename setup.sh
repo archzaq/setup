@@ -84,6 +84,7 @@ function macOS_install() {
     # Check device architecture
     if [ $(/usr/bin/uname -p) == 'arm' ];
     then
+        echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
         eval "$(/opt/homebrew/bin/brew shellenv)"
         /usr/sbin/softwareupdate --install-rosetta --agree-to-license
     fi
@@ -126,12 +127,11 @@ function macOS_install() {
     # zshrc setup
     sed -i '' -e 's/^ZSH_THEME="robbyrussell"$/ZSH_THEME="powerlevel10k\/powerlevel10k"/' ~/.zshrc
     sed -i '' -e 's/^plugins=(git)$/plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)/' ~/.zshrc
-    echo '# run p10k configure if not already ran' >> ~/.zshrc
 
     # If alacritty is present, attempt to open it, then open security settings for approval
     if [ -f /opt/homebrew/bin/alacritty ];
     then
-        /opt/homebrew/bin/alacritty &
+        /usr/bin/open /Applications/Alacritty.app &
         
         if [[ $(sw_vers -productVersion) < 13.0 ]];
         then
