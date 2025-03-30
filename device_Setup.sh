@@ -365,9 +365,10 @@ function macOS_Dock() {
             log_Message "Reverting changes to Dock."
             mv "$userDir/Library/Preferences/com.apple.dock.plist" "$userDir/Library/Preferences/com.apple.dock.failed.plist"
             cp "$userDir/Library/Preferences/com.apple.dock.OGbackup.plist" "$userDir/Library/Preferences/com.apple.dock.plist"
+        else
+            /usr/bin/defaults write "$userDir/Library/Preferences/com.apple.dock.plist" "orientation" "left"
         fi
     fi
-    /usr/bin/defaults write "$userDir/Library/Preferences/com.apple.dock.plist" "orientation" "left"
     /usr/bin/killall Dock
     log_Message "Completed Dock configuration."
 }
