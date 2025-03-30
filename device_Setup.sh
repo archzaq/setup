@@ -16,7 +16,7 @@ readonly userDir="$HOME"
 readonly defaultIconPath='/usr/local/jamfconnect/SLU.icns'
 readonly genericIconPath='/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/Everyone.icns'
 readonly dialogTitle='Device Setup'
-readonly logPath="$userDir/Desktop/setup.log"
+readonly logPath="$userDir/Desktop/device_Setup.log"
 
 # Append current status to log file
 function log_Message() {
@@ -49,11 +49,13 @@ function create_Folderz() {
     if [ ! -d "$userDir/Apps" ];
     then
         mkdir "$userDir/Apps"
+        log_Message "Creating Apps folder."
     fi
     if [ ! -d "$userDir/.config/nvim" ];
     then
         mkdir -p "$userDir/.config/nvim/autoload"
         mkdir -p "$userDir/.config/alacritty"
+        log_Message "Creating Neovim and Alacritty config folders."
     fi
 }
 
@@ -65,11 +67,12 @@ function arch_Install() {
         if ! pacman -Q "$packageInstall" &> /dev/null;
         then
             sudo pacman -S "$packageInstall" --noconfirm
+            log_Message "Installing $packageInstall"
         fi
     done
 }
 
-# Will Install packages from fedoraInstallArray that are not currently installed
+# Will install packages from fedoraInstallArray that are not currently installed
 function fedora_Install() {
     echo "WIP"
 }
@@ -82,15 +85,14 @@ function flatpak_Install() {
     if [ -f "$userDir/Apps/rustdesk.flatpak" ];
     then
         flatpak install --user -y "$userDir/Apps/rustdesk.flatpak"
+        log_Message "Installing Rustdesk flatpak."
     else
         log_Message "Rustdesk flatpak not installed"
-        log_Message "Check https://github.com/rustdesk/rustdesk/releases/"
-        sleep 10
     fi
-
     for pak in "${flatpakInstallArray[@]}";
     do
         flatpak install --user -y flathub "$pak"
+        log_Message "Installing $pak flatpak."
     done
 }
 
@@ -98,10 +100,11 @@ function flatpak_Install() {
 function configrc_Setup() {
     if [ -f "$userDir/.$1" ];
     then
-        echo "alias ll='ls -l --color=auto'" >> "$userDir/.$1"
-        echo "alias lla='ls -la --color=auto'" >> "$userDir/.$1"
-        echo "alias scripts='cd ~/OneDrive\ -\ Saint\ Louis\ University/_JAMF/Scripts && ls'" >> "$userDir/.$1"
-        echo "export EDITOR=/usr/bin/nvim" >> "$userDir/.$1"
+        printf "alias ll='ls -l --color=auto'" >> "$userDir/.$1"
+        printf "alias lla='ls -la --color=auto'" >> "$userDir/.$1"
+        printf "alias scripts='cd ~/OneDrive\ -\ Saint\ Louis\ University/_JAMF/Scripts && ls'" >> "$userDir/.$1"
+        printf "export EDITOR=/usr/bin/nvim" >> "$userDir/.$1"
+        log_Message "Created a couple alias in $1."
     fi
     source "$userDir/.$1"
 }
@@ -145,7 +148,7 @@ function alert_Dialog() {
         set promptString to "$promptString"
         set choice to (display alert promptString as critical buttons "OK" default button 1 giving up after 900)
         if (gave up of choice) is true then
-            return "timeout"
+            return "Timeout"
         else
             return (button returned of choice)
         end if
@@ -158,7 +161,7 @@ OOP
         'Error')
             log_Message "Unable to show alert dialog."
             ;;
-        'timeout')
+        'Timeout')
             log_Message "Alert timed out."
             ;;
         *)
@@ -178,7 +181,7 @@ function textField_Dialog() {
             set promptString to "$promptString"
             set iconPath to "$effectiveIconPath"
             set dialogTitle to "$dialogTitle"
-            set dialogResult to display dialog promptString buttons {"Cancel", "OK"} default button "OK" with answer default answer "" with icon POSIX file iconPath with title dialogTitle giving up after 900
+            set dialogResult to (display dialog promptString buttons {"Cancel", "OK"} default button "OK" with answer default answer "" with icon POSIX file iconPath with title dialogTitle giving up after 900)
             set buttonChoice to button returned of dialogResult
             if buttonChoice is equal to "OK" then
                 return text returned of dialogResult
@@ -223,7 +226,7 @@ function binary_Dialog() {
             set promptString to "$promptString"
             set iconPath to "$effectiveIconPath"
             set dialogTitle to "$dialogTitle"
-            set dialogResult to display dialog promptString buttons {"Cancel", "OK"} default button "OK" with icon POSIX file iconPath with title dialogTitle giving up after 900
+            set dialogResult to (display dialog promptString buttons {"Cancel", "OK"} default button "OK" with icon POSIX file iconPath with title dialogTitle giving up after 900)
             set buttonChoice to button returned of dialogResult
             if buttonChoice is equal to "" then
                 return "Timeout"
@@ -258,12 +261,15 @@ function macOS_Install() {
     # Install homebrew
     if ! command -v brew &> /dev/null;
     then
+        log_Message "Homebrew not installed, installing homebrew."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
 
     # Check device architecture
     if [ $(/usr/bin/uname -p) == 'arm' ];
     then
+        log_Message "Architecture: arm"
+        log_Message "Finishing Homebrew install and installing Rosetta."
         printf 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$userDir/.zprofile"
         eval "$(/opt/homebrew/bin/brew shellenv)"
         /usr/sbin/softwareupdate --install-rosetta --agree-to-license
@@ -280,6 +286,7 @@ function macOS_Install() {
                 log_Message "$brewInstall already installed."
             else
                 brew install "$brewInstall"
+                log_Message "Installed $brewInstall using Homebrew."
             fi
         done
 
@@ -293,26 +300,32 @@ function macOS_Install() {
                     log_Message "$caskInstall already installed"
                 else
                     brew install --cask "$caskInstall"
+                    log_Message "Installed $caskInstall using Homebrew."
                 fi
             done
+        else
+            log_Message "No additional applications installed."
         fi
     fi
 
     # oh-my-zsh setup
+    log_Message "Installing oh-my-zsh."
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
     git clone https://github.com/romkatv/powerlevel10k.git "$userDir/.oh-my-zsh/themes/powerlevel10k"
     git clone https://github.com/zsh-users/zsh-autosuggestions "$userDir/.oh-my-zsh/plugins/zsh-autosuggestions"
     git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$userDir/.oh-my-zsh/plugins/zsh-syntax-highlighting"
 
     # zshrc setup
+    log_Message "Setting zsh theme and plugins."
     sed -i '' -e 's/^ZSH_THEME="robbyrussell"$/ZSH_THEME="powerlevel10k\/powerlevel10k"/' "$userDir/.zshrc"
     sed -i '' -e 's/^plugins=(git)$/plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)/' "$userDir/.zshrc"
 
     # If alacritty is present, attempt to open it, then open security settings for approval
     if [ -f /opt/homebrew/bin/alacritty ];
     then
+        log_Message "Opening Alacritty."
         /usr/bin/open /Applications/Alacritty.app &
-        
+        log_Message "Opening Privacy & Security Settings."
         if [[ $(sw_vers -productVersion) < 13.0 ]];
         then
             open "x-apple.systempreferences:com.apple.preference.security"
@@ -321,13 +334,16 @@ function macOS_Install() {
         fi
     else
         brew install --cask alacritty
+        log_Message "Installing Alacritty using Homebrew."
     fi
 
     # Remove gross bits from the Dock
-    customDockCheck=$(/usr/bin/defaults read "$userDir/Library/Preferences/com.apple.dock.plist persistent-apps" | grep 'file-label')
-    dockCount=$(echo "$customDockCheck" | grep -c 'file-label')
+    log_Message "Checking Dock for Alacritty."
+    customDockCheck=$(/usr/bin/defaults read "$userDir/Library/Preferences/com.apple.dock.plist" "persistent-apps" | grep 'file-label')
+    dockCount=$(printf "$customDockCheck" | grep -c 'file-label')
     if [[ ! "$customDockCheck" == *"Alacritty"* ]];
     then
+        log_Message "Alacritty not found in Dock."
         cp "$userDir/Library/Preferences/com.apple.dock.plist" "$userDir/Library/Preferences/com.apple.dock.OGbackup.plist"
         for i in $(/usr/bin/seq 3 $dockCount);
         do
@@ -345,21 +361,26 @@ function macOS_Install() {
 
 # Setup neovim configuration file and plugin
 function neovim_Setup() {
+    log_Message "Setting up Neovim."
     if [ -f "$scriptDir/init.vim" ];
     then
         cp "$scriptDir/init.vim" "$userDir/.config/nvim/init.vim"
+    else
+        log_Message "Unable to locate Neovim config."
     fi
+    log_Message "Installing vim-plug."
     curl -fLo "$userDir/.config/nvim/autoload/plug.vim" --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 }
 
 # Setup alacritty configuration file
 function alacritty_Setup() {
-    curl -fLo "$userDir/.config/alacritty/master.zip https://github.com/dracula/alacritty/archive/master.zip"
+    log_Message "Setting up Alacritty."
+    curl -fLo "$userDir/.config/alacritty/master.zip" https://github.com/dracula/alacritty/archive/master.zip
     if [ -f "$userDir/.config/alacritty/master.zip" ];
     then
         unzip "$userDir/.config/alacritty/master.zip" -d "$userDir/.config/alacritty/"
     else
-        log_Message "Alacritty master.zip not found"
+        log_Message "Alacritty master.zip not found."
     fi
 
     curl -fLo "$userDir/Library/Fonts/Meslo.zip" --create-dirs https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip   
@@ -367,12 +388,14 @@ function alacritty_Setup() {
     then
         unzip "$userDir/Library/Fonts/Meslo.zip" -d "$userDir/Library/Fonts/Meslo/"
     else
-        log_Message "Meslo font pack not found"
+        log_Message "Meslo font pack not found."
     fi
     
     if [[ -f "$scriptDir/alacritty.toml" ]];
     then
         cp "$scriptDir/alacritty.toml" "$userDir/.config/alacritty/"
+    else
+        log_Message "Alacritty config not found."
     fi
 }
 
@@ -388,16 +411,24 @@ function main() {
     create_Folderz
 
     case "$osCheck" in
-        # If arch, install using pacman and flatpak, then configure bashrc
+        # If Arch, install using pacman and flatpak, then configure bashrc
         'arch')
             printf "XDG_DATA_DIR=\"/usr/local/share:/usr/share\"" | sudo tee -a /etc/environment
+            if [ ! -f "$userDir/.bashrc" ];
+            then
+                /usr/bin/touch "$userDir/.bashrc"
+            fi
             arch_Install
             flatpak_Install
             configrc_Setup "bashrc"
             ;;
 
-        # If fedora, install using dnf and flatpak, then configure bashrc
+        # If Fedora, install using dnf and flatpak, then configure bashrc
         'fedora')
+            if [ ! -f "$userDir/.bashrc" ];
+            then
+                /usr/bin/touch "$userDir/.bashrc"
+            fi
             fedora_Install
             flatpak_Install
             configrc_Setup "bashrc"
