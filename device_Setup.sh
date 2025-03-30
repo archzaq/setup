@@ -215,7 +215,7 @@ OOP
         )
         case "$textFieldDialog" in
             'Cancel')
-                log_Message "User responded with: $textFieldDialog"
+                log_Message "User responded: $textFieldDialog"
                 return 1
                 ;;
             'Timeout')
@@ -227,7 +227,7 @@ OOP
                 alert_Dialog "Please enter something."
                 ;;
             *)
-                log_Message "User responded with: $textFieldDialog"
+                log_Message "User responded: $textFieldDialog"
                 return 0
                 ;;
         esac
@@ -261,7 +261,7 @@ OOP
         )
         case "$binDialog" in
             'Cancel')
-                log_Message "User responded with: $binDialog"
+                log_Message "User responded: $binDialog"
                 return 1
                 ;;
             'Timeout')
@@ -269,7 +269,7 @@ OOP
                 ((count++))
                 ;;
             *)
-                log_Message "User responded with: $binDialog"
+                log_Message "User responded: $binDialog"
                 return 0
                 ;;
         esac
@@ -407,7 +407,7 @@ function neovim_Setup() {
     fi
     log_Message "Installing vim-plug."
     curl -fLo "$userDir/.config/nvim/autoload/plug.vim" --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-    log_Message "Completed setting up Neovim."
+    log_Message "Completed Neovim setup."
 }
 
 # Setup alacritty configuration file
@@ -481,6 +481,7 @@ function main() {
             then
                 /usr/bin/touch "$userDir/.zshrc"
             fi
+            log_Message "Prompting to name the device."
             if ! textField_Dialog "Please enter your desired device name:";
             then
                 log_Message "Device not renamed."
@@ -498,6 +499,7 @@ function main() {
             alacritty_Setup
             macOS_AlacrittySecurity
             ;;
+
         *)
             log_Message "Unable to determine OS."
             exit 1
