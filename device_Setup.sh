@@ -25,17 +25,19 @@ function log_Message() {
 
 # Least optimal way to check OS
 function check_OS() {
+    log_Message "Checking OS Version."
+    log_Message "OS Version:"
     if [[ -f '/usr/bin/pacman' ]];
     then
-        log_Message "Using Arch Linux."
+        log_Message "Arch Linux"
         osCheck='arch'
     elif [[ -f '/usr/bin/dnf' ]];
     then
-        log_Message "Using Fedora Linux."
+        log_Message "Fedora Linux"
         osCheck='fedora'
     elif [[ -f '/usr/sbin/sysadminctl' ]];
     then
-        log_Message "Using macOS."
+        log_Message "macOS"
         osCheck='macOS'
     else
         osCheck='Unknown'
@@ -44,41 +46,54 @@ function check_OS() {
     return 0
 }
 
-# Create the usual folders
+# Create the usual folders in Home directory
 function create_Folderz() {
-    if [ ! -d "$userDir/Apps" ];
+    log_Message "Creating the usual folders in Home directory."
+    if [[ ! -d "$userDir/Apps" ]];
     then
-        log_Message "Creating Apps folder."
+        log_Message "Creating Apps folder: $userDir/Apps"
         mkdir "$userDir/Apps"
+    else
+        log_Message "Apps folder found."
     fi
-    if [ ! -d "$userDir/.config/nvim" ];
+    if [[ ! -d "$userDir/.config/nvim" ]];
     then
-        log_Message "Creating Neovim and Alacritty config folders."
+        log_Message "Creating Alacritty/Neovim config folders."
         mkdir -p "$userDir/.config/nvim/autoload"
         mkdir -p "$userDir/.config/alacritty"
+    else
+        log_Message "Alacritty/Neovim config folders found."
     fi
+    log_Message "Folders creation completed."
 }
 
 # Install packages from archInstallArray that are not currently installed
 function arch_Install() {
-    sudo pacman -Syyy
+    log_Message "Installing packages with pacman."
+    sudo /usr/bin/pacman -Syyy
     for packageInstall in "${archInstallArray[@]}";
     do
-        if ! pacman -Q "$packageInstall" &> /dev/null;
+        if ! /usr/bin/pacman -Q "$packageInstall" &> /dev/null;
         then
-            log_Message "Installing $packageInstall"
-            sudo pacman -S "$packageInstall" --noconfirm
+            log_Message "Installing $packageInstall."
+            sudo /usr/bin/pacman -S "$packageInstall" --noconfirm
+        else
+            log_Message "Skipping $packageInstall, already installed."
         fi
     done
+    log_Message "Completed installing packages with pacman."
 }
 
 # Will install packages from fedoraInstallArray that are not currently installed
 function fedora_Install() {
-    echo "WIP"
+    log_Message "Installing packages with dnf."
+    printf "WIP\n"
+    log_Message "Completed installing packages with dnf."
 }
 
-# Install flatpaks from flatpakInstallArray, including rustdesk
+# Install flatpaks from flatpakInstallArray, including Rustdesk
 function flatpak_Install() {
+    log_Message "Installing packages with flatpak."
     flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     latestRelease=$(curl -s https://api.github.com/repos/rustdesk/rustdesk/releases/latest | jq -r .tag_name)
     curl -fLo "$userDir/Apps/rustdesk.flatpak" "https://github.com/rustdesk/rustdesk/releases/download/${latestRelease}/rustdesk-${latestRelease#v}-x86_64.flatpak"
@@ -87,30 +102,33 @@ function flatpak_Install() {
         log_Message "Installing Rustdesk flatpak."
         flatpak install --user -y "$userDir/Apps/rustdesk.flatpak"
     else
-        log_Message "Rustdesk flatpak not installed"
+        log_Message "Rustdesk flatpak not installed."
     fi
     for pak in "${flatpakInstallArray[@]}";
     do
         log_Message "Installing $pak flatpak."
         flatpak install --user -y flathub "$pak"
     done
+    log_Message "Completed installing packages with flatpak."
 }
 
 # Setup bashrc/zshrc with alias and editor
 function configrc_Setup() {
+    log_Message "Adding entries to $1"
     if [ -f "$userDir/.$1" ];
     then
         printf "alias ll='ls -l --color=auto'" >> "$userDir/.$1"
         printf "alias lla='ls -la --color=auto'" >> "$userDir/.$1"
         printf "alias scripts='cd ~/OneDrive\ -\ Saint\ Louis\ University/_JAMF/Scripts && ls'" >> "$userDir/.$1"
         printf "export EDITOR=/usr/bin/nvim" >> "$userDir/.$1"
-        log_Message "Created a couple alias in $1."
     fi
     source "$userDir/.$1"
+    log_Message "Completed adding entries to $1"
 }
 
 # Check for valid icon file, AppleScript dialog boxes will error without it
 function icon_Check() {
+    log_Message "Checking for icon file for AppleScript dialog windows."
     effectiveIconPath="$defaultIconPath"
     if [[ ! -f "$effectiveIconPath" ]];
     then
@@ -136,6 +154,7 @@ function icon_Check() {
     else
         log_Message "SLU icon found."
     fi
+    log_Message "Completed icon file check."
     return 0
 }
 
@@ -174,6 +193,7 @@ OOP
 function textField_Dialog() {
     local promptString="$1"
     local count=1
+    log_Message "Displaying text field dialog."
     while [ $count -le 10 ];
     do
         textFieldDialog=$(/usr/bin/osascript <<OOP
@@ -219,6 +239,7 @@ OOP
 function binary_Dialog() {
     local promptString="$1"
     local count=1
+    log_Message "Displaying binary dialog."
     while [ $count -le 10 ];
     do
         binDialog=$(/usr/bin/osascript <<OOP
@@ -256,13 +277,15 @@ OOP
     return 1
 }
 
-# Install homebrew, rosetta if needed, a bunch of brew apps, then setup oh-my-zsh
-function macOS_Install() {
-    # Install homebrew
+# Install homebrew, rosetta if needed, then bunch of brew apps
+function macOS_HomebrewInstall() {
+    log_Message "Beginning Homebrew installation."
     if ! command -v brew &> /dev/null;
     then
-        log_Message "Homebrew not installed, installing homebrew."
+        log_Message "Installing Homebrew."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    else
+        log_Message "Skipping Homebrew, already installed."
     fi
 
     # Check device architecture
@@ -273,71 +296,63 @@ function macOS_Install() {
         printf 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$userDir/.zprofile"
         eval "$(/opt/homebrew/bin/brew shellenv)"
         /usr/sbin/softwareupdate --install-rosetta --agree-to-license
+    else
+        log_Message "Architecture: x86"
     fi
 
     # Check again for homebrew before using binary
+    log_Message "Installing applications using Homebrew."
     if command -v brew &>/dev/null;
     then
-        # Homebrew install applications and casks
         for brewInstall in "${macOSInstallArray[@]}";
         do
             if brew list "$brewInstall" &>/dev/null;
             then
-                log_Message "$brewInstall already installed."
+                log_Message "Skipping $brewInstall, already installed."
             else
+                log_Message "Installing $brewInstall."
                 brew install "$brewInstall"
-                log_Message "Installed $brewInstall using Homebrew."
             fi
         done
 
-        # Ask to install additional apps
-        if binary_Dialog "Would you like to download additional Applications?";
+        log_Message "Promping to download additional cask applications."
+        if binary_Dialog "Would you like to download additional cask Applications?";
         then
             for caskInstall in "${macOSInstallCaskArray[@]}";
             do
                 if brew list --cask "$caskInstall" &>/dev/null;
                 then
-                    log_Message "$caskInstall already installed"
+                    log_Message "Skipping $caskInstall, already installed"
                 else
+                    log_Message "Installing $caskInstall."
                     brew install --cask "$caskInstall"
-                    log_Message "Installed $caskInstall using Homebrew."
                 fi
             done
         else
             log_Message "No additional applications installed."
         fi
+    else
+        log_Message "Homebrew not installed."
     fi
+    log_Message "Completed Homebrew installation."
+}
 
-    # oh-my-zsh setup
+# Setup macOS zsh plugins and theme
+function macOS_Shell() {
     log_Message "Installing oh-my-zsh."
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
     git clone https://github.com/romkatv/powerlevel10k.git "$userDir/.oh-my-zsh/themes/powerlevel10k"
     git clone https://github.com/zsh-users/zsh-autosuggestions "$userDir/.oh-my-zsh/plugins/zsh-autosuggestions"
     git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$userDir/.oh-my-zsh/plugins/zsh-syntax-highlighting"
 
-    # zshrc setup
     log_Message "Setting zsh theme and plugins."
     sed -i '' -e 's/^ZSH_THEME="robbyrussell"$/ZSH_THEME="powerlevel10k\/powerlevel10k"/' "$userDir/.zshrc"
     sed -i '' -e 's/^plugins=(git)$/plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)/' "$userDir/.zshrc"
 
-    # If alacritty is present, attempt to open it, then open security settings for approval
-    if [ -f /opt/homebrew/bin/alacritty ];
-    then
-        log_Message "Opening Alacritty."
-        /usr/bin/open /Applications/Alacritty.app &
-        log_Message "Opening Privacy & Security Settings."
-        if [[ $(sw_vers -productVersion) < 13.0 ]];
-        then
-            open "x-apple.systempreferences:com.apple.preference.security"
-        else
-            open "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension"
-        fi
-    else
-        brew install --cask alacritty
-        log_Message "Installing Alacritty using Homebrew."
-    fi
+}
 
-    # Remove gross bits from the Dock
+# Setup macOS dock to remove default apps and change orientation
+function macOS_Dock() {
     log_Message "Checking Dock for Alacritty."
     customDockCheck=$(/usr/bin/defaults read "$userDir/Library/Preferences/com.apple.dock.plist" "persistent-apps" | grep 'file-label')
     dockCount=$(printf "$customDockCheck" | grep -c 'file-label')
@@ -355,7 +370,29 @@ function macOS_Install() {
             mv "$userDir/Library/Preferences/com.apple.dock.plist" "$userDir/Library/Preferences/com.apple.dock.failed.plist"
             cp "$userDir/Library/Preferences/com.apple.dock.OGbackup.plist" "$userDir/Library/Preferences/com.apple.dock.plist"
         fi
-        /usr/bin/killall Dock
+    fi
+    /usr/bin/defaults read "$userDir/Library/Preferences/com.apple.dock.plist" "orientation" "left"
+    /usr/bin/killall Dock
+}
+
+# If alacritty is present, attempt to open it, then open security settings for approval
+function macOS_AlacrittySecurity() {
+    log_Message "Attempting to open Alacritty."
+    if [[ -d "/Applications/Alacritty.app" ]];
+    then
+        log_Message "Opening Alacritty."
+        /usr/bin/open /Applications/Alacritty.app &
+        log_Message "Opening Privacy & Security Settings."
+        if [[ $(sw_vers -productVersion) < 13.0 ]];
+        then
+            open "x-apple.systempreferences:com.apple.preference.security"
+        else
+            open "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension"
+        fi
+    else
+        log_Message "Alacritty not installed."
+        log_Message "Installing Alacritty using Homebrew."
+        brew install --cask alacritty
     fi
 }
 
@@ -418,9 +455,12 @@ function main() {
             then
                 /usr/bin/touch "$userDir/.bashrc"
             fi
+
             arch_Install
             flatpak_Install
             configrc_Setup "bashrc"
+            neovim_Setup
+            alacritty_Setup
             ;;
 
         # If Fedora, install using dnf and flatpak, then configure bashrc
@@ -429,9 +469,12 @@ function main() {
             then
                 /usr/bin/touch "$userDir/.bashrc"
             fi
+
             fedora_Install
             flatpak_Install
             configrc_Setup "bashrc"
+            neovim_Setup
+            alacritty_Setup
             ;;
 
         # If macOS, install using brew, then configure zshrc
@@ -458,8 +501,13 @@ function main() {
                 log_Message "Device renamed to $textFieldDialog"
             fi
 
-            macOS_Install
+            macOS_HomebrewInstall
+            macOS_Shell
+            macOS_Dock
             configrc_Setup "zshrc"
+            neovim_Setup
+            alacritty_Setup
+            macOS_AlacrittySecurity
             ;;
         *)
             log_Message "Unable to determine OS."
@@ -467,8 +515,8 @@ function main() {
             ;;
     esac
 
-    neovim_Setup
-    alacritty_Setup
+    log_Message "Exiting!"
+    exit 0
 }
 
 main
