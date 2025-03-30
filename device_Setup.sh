@@ -10,7 +10,7 @@
 archInstallArray=("alacritty" "fastfetch" "flatpak" "git" "htop" "jq" "neovim" "nodejs" "ranger" "remmina" "tmux" "unzip" "wl-clipboard" "zip")
 flatpakInstallArray=("io.gitlab.librewolf-community" "org.signal.Signal" "com.github.tchx84.Flatseal" "com.spotify.Client" "com.brave.Browser" "com.discordapp.Discord")
 macOSInstallArray=("fastfetch" "gh" "git" "jq" "neofetch" "neovim" "node" "ranger" "tmux" "tree")
-macOSInstallCaskArray=("alacritty" "discord" "google-chrome" "imazing-profile-editor" "librewolf" "mullvad-browser" "mullvadvpn" "pppc-utility" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
+macOSInstallCaskArray=("alacritty" "discord" "firefox" "google-chrome" "imazing-profile-editor" "librewolf" "mullvad-browser" "mullvadvpn" "pppc-utility" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
 readonly scriptDir="$(dirname "$0")"
 readonly userDir="$HOME"
 readonly defaultIconPath='/usr/local/jamfconnect/SLU.icns'
@@ -23,7 +23,7 @@ function log_Message() {
     printf "Log: $(date "+%F %T") %s\n" "$1" | tee -a "$logPath"
 }
 
-# Least optimal way to check OS
+# Check for the current OS
 function check_OS() {
     log_Message "Checking OS Version."
     log_Message "OS Version:"
@@ -64,7 +64,7 @@ function create_Folderz() {
     else
         log_Message "Alacritty/Neovim config folders found."
     fi
-    log_Message "Folders creation completed."
+    log_Message "Completed folder creation."
 }
 
 # Install packages from archInstallArray that are not currently installed
@@ -97,7 +97,7 @@ function flatpak_Install() {
     flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     latestRelease=$(curl -s https://api.github.com/repos/rustdesk/rustdesk/releases/latest | jq -r .tag_name)
     curl -fLo "$userDir/Apps/rustdesk.flatpak" "https://github.com/rustdesk/rustdesk/releases/download/${latestRelease}/rustdesk-${latestRelease#v}-x86_64.flatpak"
-    if [ -f "$userDir/Apps/rustdesk.flatpak" ];
+    if [[ -f "$userDir/Apps/rustdesk.flatpak" ]];
     then
         log_Message "Installing Rustdesk flatpak."
         flatpak install --user -y "$userDir/Apps/rustdesk.flatpak"
@@ -115,12 +115,12 @@ function flatpak_Install() {
 # Setup bashrc/zshrc with alias and editor
 function configrc_Setup() {
     log_Message "Adding entries to $1"
-    if [ -f "$userDir/.$1" ];
+    if [[ -f "$userDir/.$1" ]];
     then
-        printf "alias ll='ls -l --color=auto'" >> "$userDir/.$1"
-        printf "alias lla='ls -la --color=auto'" >> "$userDir/.$1"
-        printf "alias scripts='cd ~/OneDrive\ -\ Saint\ Louis\ University/_JAMF/Scripts && ls'" >> "$userDir/.$1"
-        printf "export EDITOR=/usr/bin/nvim" >> "$userDir/.$1"
+        printf "alias ll='ls -l --color=auto'\n" >> "$userDir/.$1"
+        printf "alias lla='ls -la --color=auto'\n" >> "$userDir/.$1"
+        printf "alias scripts='cd ~/OneDrive\ -\ Saint\ Louis\ University/_JAMF/Scripts && ls'\n" >> "$userDir/.$1"
+        printf "export EDITOR=/usr/bin/nvim\n" >> "$userDir/.$1"
     fi
     source "$userDir/.$1"
     log_Message "Completed adding entries to $1"
@@ -194,7 +194,7 @@ function textField_Dialog() {
     local promptString="$1"
     local count=1
     log_Message "Displaying text field dialog."
-    while [ $count -le 10 ];
+    while [[ $count -le 10 ]];
     do
         textFieldDialog=$(/usr/bin/osascript <<OOP
         try
@@ -240,7 +240,7 @@ function binary_Dialog() {
     local promptString="$1"
     local count=1
     log_Message "Displaying binary dialog."
-    while [ $count -le 10 ];
+    while [[ $count -le 10 ]];
     do
         binDialog=$(/usr/bin/osascript <<OOP
         try
@@ -287,19 +287,17 @@ function macOS_HomebrewInstall() {
     else
         log_Message "Skipping Homebrew, already installed."
     fi
-
     # Check device architecture
-    if [ $(/usr/bin/uname -p) == 'arm' ];
+    if [[ $(/usr/bin/uname -p) == 'arm' ]];
     then
         log_Message "Architecture: arm"
-        log_Message "Finishing Homebrew install and installing Rosetta."
         printf 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$userDir/.zprofile"
         eval "$(/opt/homebrew/bin/brew shellenv)"
         /usr/sbin/softwareupdate --install-rosetta --agree-to-license
+        log_Message "Completed Homebrew and Rosetta install."
     else
         log_Message "Architecture: x86"
     fi
-
     # Check again for homebrew before using binary
     log_Message "Installing applications using Homebrew."
     if command -v brew &>/dev/null;
@@ -314,7 +312,6 @@ function macOS_HomebrewInstall() {
                 brew install "$brewInstall"
             fi
         done
-
         log_Message "Promping to download additional cask applications."
         if binary_Dialog "Would you like to download additional cask Applications?";
         then
@@ -332,7 +329,7 @@ function macOS_HomebrewInstall() {
             log_Message "No additional applications installed."
         fi
     else
-        log_Message "Homebrew not installed."
+        log_Message "Homebrew still not installed."
     fi
     log_Message "Completed Homebrew installation."
 }
@@ -344,40 +341,40 @@ function macOS_Shell() {
     git clone https://github.com/romkatv/powerlevel10k.git "$userDir/.oh-my-zsh/themes/powerlevel10k"
     git clone https://github.com/zsh-users/zsh-autosuggestions "$userDir/.oh-my-zsh/plugins/zsh-autosuggestions"
     git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$userDir/.oh-my-zsh/plugins/zsh-syntax-highlighting"
-
     log_Message "Setting zsh theme and plugins."
     sed -i '' -e 's/^ZSH_THEME="robbyrussell"$/ZSH_THEME="powerlevel10k\/powerlevel10k"/' "$userDir/.zshrc"
     sed -i '' -e 's/^plugins=(git)$/plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)/' "$userDir/.zshrc"
-
+    log_Message "Completed zsh configuration."
 }
 
 # Setup macOS dock to remove default apps and change orientation
 function macOS_Dock() {
     log_Message "Checking Dock for Alacritty."
-    customDockCheck=$(/usr/bin/defaults read "$userDir/Library/Preferences/com.apple.dock.plist" "persistent-apps" | grep 'file-label')
-    dockCount=$(printf "$customDockCheck" | grep -c 'file-label')
-    if [[ ! "$customDockCheck" == *"Alacritty"* ]];
+    dockCheck=$(/usr/bin/defaults read "$userDir/Library/Preferences/com.apple.dock.plist" "persistent-apps" | grep 'file-label')
+    dockCount=$(printf "$dockCheck" | grep -c 'file-label')
+    if [[ ! "$dockCheck" == *"Alacritty"* ]];
     then
-        log_Message "Alacritty not found in Dock."
+        log_Message "Alacritty not found in Dock. Backing up Dock plist and removing persistent applications."
         cp "$userDir/Library/Preferences/com.apple.dock.plist" "$userDir/Library/Preferences/com.apple.dock.OGbackup.plist"
         for i in $(/usr/bin/seq 3 $dockCount);
         do
             /usr/bin/plutil -remove 'persistent-apps.2' "$userDir/Library/Preferences/com.apple.dock.plist"
         done
-
         if [[ ! $(/usr/bin/plutil -lint "$userDir/Library/Preferences/com.apple.dock.plist") == *'OK'* ]];
         then
+            log_Message "Reverting changes to Dock."
             mv "$userDir/Library/Preferences/com.apple.dock.plist" "$userDir/Library/Preferences/com.apple.dock.failed.plist"
             cp "$userDir/Library/Preferences/com.apple.dock.OGbackup.plist" "$userDir/Library/Preferences/com.apple.dock.plist"
         fi
     fi
-    /usr/bin/defaults read "$userDir/Library/Preferences/com.apple.dock.plist" "orientation" "left"
+    /usr/bin/defaults write "$userDir/Library/Preferences/com.apple.dock.plist" "orientation" "left"
     /usr/bin/killall Dock
+    log_Message "Completed Dock configuration."
 }
 
 # If alacritty is present, attempt to open it, then open security settings for approval
 function macOS_AlacrittySecurity() {
-    log_Message "Attempting to open Alacritty."
+    log_Message "Attempting to open Alacritty to allow it though Gatekeeper."
     if [[ -d "/Applications/Alacritty.app" ]];
     then
         log_Message "Opening Alacritty."
@@ -399,7 +396,7 @@ function macOS_AlacrittySecurity() {
 # Setup neovim configuration file and plugin
 function neovim_Setup() {
     log_Message "Setting up Neovim."
-    if [ -f "$scriptDir/init.vim" ];
+    if [[ -f "$scriptDir/init.vim" ]];
     then
         cp "$scriptDir/init.vim" "$userDir/.config/nvim/init.vim"
     else
@@ -407,55 +404,50 @@ function neovim_Setup() {
     fi
     log_Message "Installing vim-plug."
     curl -fLo "$userDir/.config/nvim/autoload/plug.vim" --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+    log_Message "Completed setting up Neovim."
 }
 
 # Setup alacritty configuration file
 function alacritty_Setup() {
     log_Message "Setting up Alacritty."
     curl -fLo "$userDir/.config/alacritty/master.zip" https://github.com/dracula/alacritty/archive/master.zip
-    if [ -f "$userDir/.config/alacritty/master.zip" ];
+    if [[ -f "$userDir/.config/alacritty/master.zip" ]];
     then
         unzip "$userDir/.config/alacritty/master.zip" -d "$userDir/.config/alacritty/"
     else
         log_Message "Alacritty master.zip not found."
     fi
-
     curl -fLo "$userDir/Library/Fonts/Meslo.zip" --create-dirs https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip   
-    if [ -f "$userDir/Library/Fonts/Meslo.zip" ];
+    if [[ -f "$userDir/Library/Fonts/Meslo.zip" ]];
     then
         unzip "$userDir/Library/Fonts/Meslo.zip" -d "$userDir/Library/Fonts/Meslo/"
     else
         log_Message "Meslo font pack not found."
     fi
-    
     if [[ -f "$scriptDir/alacritty.toml" ]];
     then
         cp "$scriptDir/alacritty.toml" "$userDir/.config/alacritty/"
     else
         log_Message "Alacritty config not found."
     fi
+    log_Message "Completed Alacritty setup."
 }
 
 function main() {
     printf "Log: $(date "+%F %T") Beginning Device Setup script.\n" | tee "$logPath"
-
     if ! check_OS;
     then
         log_Message "Unable to determine OS."
         exit 1
     fi
-
     create_Folderz
-
     case "$osCheck" in
-        # If Arch, install using pacman and flatpak, then configure bashrc
         'arch')
             printf "XDG_DATA_DIR=\"/usr/local/share:/usr/share\"" | sudo tee -a /etc/environment
-            if [ ! -f "$userDir/.bashrc" ];
+            if [[ ! -f "$userDir/.bashrc" ]];
             then
                 /usr/bin/touch "$userDir/.bashrc"
             fi
-
             arch_Install
             flatpak_Install
             configrc_Setup "bashrc"
@@ -463,13 +455,11 @@ function main() {
             alacritty_Setup
             ;;
 
-        # If Fedora, install using dnf and flatpak, then configure bashrc
         'fedora')
-            if [ ! -f "$userDir/.bashrc" ];
+            if [[ ! -f "$userDir/.bashrc" ]];
             then
                 /usr/bin/touch "$userDir/.bashrc"
             fi
-
             fedora_Install
             flatpak_Install
             configrc_Setup "bashrc"
@@ -477,7 +467,6 @@ function main() {
             alacritty_Setup
             ;;
 
-        # If macOS, install using brew, then configure zshrc
         'macOS')
             if ! icon_Check;
             then
@@ -485,12 +474,10 @@ function main() {
                 log_Message "Exiting for no icon."
                 exit 1
             fi
-
-            if [ ! -f "$userDir/.zshrc" ];
+            if [[ ! -f "$userDir/.zshrc" ]];
             then
                 /usr/bin/touch "$userDir/.zshrc"
             fi
-
             if ! textField_Dialog "Please enter your desired device name:";
             then
                 log_Message "Device not renamed."
@@ -498,9 +485,8 @@ function main() {
                 /usr/sbin/scutil --set ComputerName $textFieldDialog
                 /usr/sbin/scutil --set LocalHostName $textFieldDialog
                 /usr/sbin/scutil --set HostName $textFieldDialog
-                log_Message "Device renamed to $textFieldDialog"
+                log_Message "Device renamed to $textFieldDialog."
             fi
-
             macOS_HomebrewInstall
             macOS_Shell
             macOS_Dock
@@ -514,7 +500,6 @@ function main() {
             exit 1
             ;;
     esac
-
     log_Message "Exiting!"
     exit 0
 }
