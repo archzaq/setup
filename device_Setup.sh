@@ -27,16 +27,16 @@ function log_Message() {
 function check_OS() {
     if [[ -f '/usr/bin/pacman' ]];
     then
-        osCheck='arch'
         log_Message "Using Arch Linux."
+        osCheck='arch'
     elif [[ -f '/usr/bin/dnf' ]];
     then
-        osCheck='fedora'
         log_Message "Using Fedora Linux."
+        osCheck='fedora'
     elif [[ -f '/usr/sbin/sysadminctl' ]];
     then
-        osCheck='macOS'
         log_Message "Using macOS."
+        osCheck='macOS'
     else
         osCheck='Unknown'
         return 1
@@ -48,14 +48,14 @@ function check_OS() {
 function create_Folderz() {
     if [ ! -d "$userDir/Apps" ];
     then
-        mkdir "$userDir/Apps"
         log_Message "Creating Apps folder."
+        mkdir "$userDir/Apps"
     fi
     if [ ! -d "$userDir/.config/nvim" ];
     then
+        log_Message "Creating Neovim and Alacritty config folders."
         mkdir -p "$userDir/.config/nvim/autoload"
         mkdir -p "$userDir/.config/alacritty"
-        log_Message "Creating Neovim and Alacritty config folders."
     fi
 }
 
@@ -66,8 +66,8 @@ function arch_Install() {
     do
         if ! pacman -Q "$packageInstall" &> /dev/null;
         then
-            sudo pacman -S "$packageInstall" --noconfirm
             log_Message "Installing $packageInstall"
+            sudo pacman -S "$packageInstall" --noconfirm
         fi
     done
 }
@@ -84,15 +84,15 @@ function flatpak_Install() {
     curl -fLo "$userDir/Apps/rustdesk.flatpak" "https://github.com/rustdesk/rustdesk/releases/download/${latestRelease}/rustdesk-${latestRelease#v}-x86_64.flatpak"
     if [ -f "$userDir/Apps/rustdesk.flatpak" ];
     then
-        flatpak install --user -y "$userDir/Apps/rustdesk.flatpak"
         log_Message "Installing Rustdesk flatpak."
+        flatpak install --user -y "$userDir/Apps/rustdesk.flatpak"
     else
         log_Message "Rustdesk flatpak not installed"
     fi
     for pak in "${flatpakInstallArray[@]}";
     do
-        flatpak install --user -y flathub "$pak"
         log_Message "Installing $pak flatpak."
+        flatpak install --user -y flathub "$pak"
     done
 }
 
