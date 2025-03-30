@@ -75,7 +75,7 @@ function arch_Install() {
     do
         if ! /usr/bin/pacman -Q "$packageInstall" &> /dev/null;
         then
-            log_Message "Installing $packageInstall."
+            log_Message "Installing $packageInstall"
             sudo /usr/bin/pacman -S "$packageInstall" --noconfirm
         else
             log_Message "Skipping $packageInstall, already installed."
@@ -99,14 +99,14 @@ function flatpak_Install() {
     curl -fLo "$userDir/Apps/rustdesk.flatpak" "https://github.com/rustdesk/rustdesk/releases/download/${latestRelease}/rustdesk-${latestRelease#v}-x86_64.flatpak"
     if [[ -f "$userDir/Apps/rustdesk.flatpak" ]];
     then
-        log_Message "Installing Rustdesk flatpak."
+        log_Message "Installing Rustdesk"
         flatpak install --user -y "$userDir/Apps/rustdesk.flatpak"
     else
         log_Message "Rustdesk flatpak not installed."
     fi
     for pak in "${flatpakInstallArray[@]}";
     do
-        log_Message "Installing $pak flatpak."
+        log_Message "Installing $pak"
         flatpak install --user -y flathub "$pak"
     done
     log_Message "Completed installing packages with flatpak."
@@ -114,7 +114,7 @@ function flatpak_Install() {
 
 # Setup bashrc/zshrc with alias and editor
 function configrc_Setup() {
-    log_Message "Adding entries to $1"
+    log_Message "Adding entries to $1."
     if [[ -f "$userDir/.$1" ]];
     then
         printf "alias ll='ls -l --color=auto'\n" >> "$userDir/.$1"
@@ -123,7 +123,7 @@ function configrc_Setup() {
         printf "export EDITOR=/usr/bin/nvim\n" >> "$userDir/.$1"
     fi
     source "$userDir/.$1"
-    log_Message "Completed adding entries to $1"
+    log_Message "Completed adding entries to $1."
 }
 
 # Check for valid icon file, AppleScript dialog boxes will error without it
@@ -288,6 +288,7 @@ function macOS_HomebrewInstall() {
         log_Message "Skipping Homebrew, already installed."
     fi
     # Check device architecture
+    log_Message "Checking architecture."
     if [[ $(/usr/bin/uname -p) == 'arm' ]];
     then
         log_Message "Architecture: arm"
@@ -308,7 +309,7 @@ function macOS_HomebrewInstall() {
             then
                 log_Message "Skipping $brewInstall, already installed."
             else
-                log_Message "Installing $brewInstall."
+                log_Message "Installing $brewInstall"
                 brew install "$brewInstall"
             fi
         done
@@ -321,7 +322,7 @@ function macOS_HomebrewInstall() {
                 then
                     log_Message "Skipping $caskInstall, already installed"
                 else
-                    log_Message "Installing $caskInstall."
+                    log_Message "Installing $caskInstall"
                     brew install --cask "$caskInstall"
                 fi
             done
@@ -375,7 +376,7 @@ function macOS_Dock() {
 
 # If alacritty is present, attempt to open it, then open security settings for approval
 function macOS_AlacrittySecurity() {
-    log_Message "Attempting to open Alacritty to allow it though Gatekeeper."
+    log_Message "Attempting to open Alacritty to then allow it though Gatekeeper."
     if [[ -d "/Applications/Alacritty.app" ]];
     then
         log_Message "Opening Alacritty."
@@ -399,6 +400,7 @@ function neovim_Setup() {
     log_Message "Setting up Neovim."
     if [[ -f "$scriptDir/init.vim" ]];
     then
+        log_Message "Copying Neovim config."
         cp "$scriptDir/init.vim" "$userDir/.config/nvim/init.vim"
     else
         log_Message "Unable to locate Neovim config."
@@ -486,7 +488,7 @@ function main() {
                 /usr/sbin/scutil --set ComputerName $textFieldDialog
                 /usr/sbin/scutil --set LocalHostName $textFieldDialog
                 /usr/sbin/scutil --set HostName $textFieldDialog
-                log_Message "Device renamed to $textFieldDialog."
+                log_Message "Device renamed: $textFieldDialog"
             fi
             macOS_HomebrewInstall
             macOS_Shell
