@@ -42,7 +42,7 @@ function check_OS() {
         osCheck='Unknown'
         return 1
     fi
-    deviceArch="$(/usr/bin/uname -p)"
+    deviceArch="$(/usr/bin/uname -m)"
     return 0
 }
 
@@ -96,12 +96,12 @@ function flatpak_Install() {
     log_Message "Installing packages with flatpak."
     flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     latestRelease=$(curl -s https://api.github.com/repos/rustdesk/rustdesk/releases/latest | jq -r .tag_name)
-    if curl -fLo "$userDir/Apps/rustdesk.flatpak" "https://github.com/rustdesk/rustdesk/releases/download/${latestRelease}/rustdesk-${latestRelease#v}-x86_64.flatpak";
+    if curl -fLo "$userDir/Apps/rustdesk.flatpak" "https://github.com/rustdesk/rustdesk/releases/download/${latestRelease}/rustdesk-${latestRelease#v}-${deviceArch}.flatpak";
     then
         log_Message "Installing Rustdesk"
         flatpak install --user -y "$userDir/Apps/rustdesk.flatpak"
     else
-        log_Message "Rustdesk flatpak not installed."
+        log_Message "Rustdesk not installed."
     fi
     for pak in "${flatpakInstallArray[@]}";
     do
@@ -291,8 +291,9 @@ function macOS_HomebrewInstall() {
     else
         log_Message "Skipping Homebrew, already installed."
     fi
-    if [[ "$deviceArch" == 'arm' ]];
+    if [[ "$deviceArch" == 'arm64' ]];
     then
+        log_Message "Setting up Homebrew shell env."
         printf 'eval "$(/opt/homebrew/bin/brew shellenv)"\n' >> "$userDir/.zprofile"
         eval "$(/opt/homebrew/bin/brew shellenv)"
         log_Message "Completed Homebrew shell env setup."
