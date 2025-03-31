@@ -25,7 +25,6 @@ function log_Message() {
 
 # Check for the current OS
 function check_OS() {
-    log_Message "Checking OS Version."
     log_Message "OS Version:"
     if [[ -f '/usr/bin/pacman' ]];
     then
@@ -43,12 +42,13 @@ function check_OS() {
         osCheck='Unknown'
         return 1
     fi
+    deviceArch="$(/usr/bin/uname -p)"
     return 0
 }
 
 # Create the usual folders in Home directory
 function create_Folderz() {
-    log_Message "Creating the usual folders in Home directory."
+    log_Message "Creating folders in Home directory."
     if [[ ! -d "$userDir/Apps" ]];
     then
         log_Message "Creating Apps folder: $userDir/Apps"
@@ -60,7 +60,7 @@ function create_Folderz() {
     then
         log_Message "Creating Alacritty/Neovim config folders."
         mkdir -p "$userDir/.config/nvim/autoload"
-        mkdir -p "$userDir/.config/alacritty"
+        mkdir "$userDir/.config/alacritty"
     else
         log_Message "Alacritty/Neovim config folders found."
     fi
@@ -96,8 +96,7 @@ function flatpak_Install() {
     log_Message "Installing packages with flatpak."
     flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     latestRelease=$(curl -s https://api.github.com/repos/rustdesk/rustdesk/releases/latest | jq -r .tag_name)
-    curl -fLo "$userDir/Apps/rustdesk.flatpak" "https://github.com/rustdesk/rustdesk/releases/download/${latestRelease}/rustdesk-${latestRelease#v}-x86_64.flatpak"
-    if [[ -f "$userDir/Apps/rustdesk.flatpak" ]];
+    if curl -fLo "$userDir/Apps/rustdesk.flatpak" "https://github.com/rustdesk/rustdesk/releases/download/${latestRelease}/rustdesk-${latestRelease#v}-x86_64.flatpak";
     then
         log_Message "Installing Rustdesk"
         flatpak install --user -y "$userDir/Apps/rustdesk.flatpak"
@@ -283,21 +282,27 @@ function macOS_HomebrewInstall() {
     if ! command -v brew &> /dev/null;
     then
         log_Message "Installing Homebrew."
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)";
+        then
+            log_Message "Completed Homebrew install."
+        else
+            log_Message "Unable to complete Homebrew install."
+        fi
     else
         log_Message "Skipping Homebrew, already installed."
     fi
-    # Check device architecture
-    log_Message "Checking architecture."
-    if [[ $(/usr/bin/uname -p) == 'arm' ]];
+    if [[ "$deviceArch" == 'arm' ]];
     then
-        log_Message "Architecture: arm"
-        printf 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$userDir/.zprofile"
+        printf 'eval "$(/opt/homebrew/bin/brew shellenv)"\n' >> "$userDir/.zprofile"
         eval "$(/opt/homebrew/bin/brew shellenv)"
-        /usr/sbin/softwareupdate --install-rosetta --agree-to-license
-        log_Message "Completed Homebrew and Rosetta install."
-    else
-        log_Message "Architecture: x86"
+        log_Message "Completed Homebrew shell env setup."
+        log_Message "Installing Rosetta."
+        if /usr/sbin/softwareupdate --install-rosetta --agree-to-license;
+        then
+            log_Message "Completed Rosetta install."
+        else
+            log_Message "Unable to complete Rosetta install."
+        fi
     fi
     # Check again for homebrew before using binary
     log_Message "Installing applications using Homebrew."
@@ -338,10 +343,33 @@ function macOS_HomebrewInstall() {
 # Setup macOS zsh plugins and theme
 function macOS_Shell() {
     log_Message "Installing oh-my-zsh."
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-    git clone https://github.com/romkatv/powerlevel10k.git "$userDir/.oh-my-zsh/themes/powerlevel10k"
-    git clone https://github.com/zsh-users/zsh-autosuggestions "$userDir/.oh-my-zsh/plugins/zsh-autosuggestions"
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$userDir/.oh-my-zsh/plugins/zsh-syntax-highlighting"
+    if sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended;
+    then
+        log_Message "Completed oh-my-zsh install."
+    else
+        log_Message "Unable to complete oh-my-zsh install."
+    fi
+    log_Message "Installing powerlevel10k plugin."
+    if git clone https://github.com/romkatv/powerlevel10k.git "$userDir/.oh-my-zsh/themes/powerlevel10k";
+    then
+        log_Message "Completed powerlevel10k plugin install."
+    else
+        log_Message "Unable to complete powerlevel10k plugin install."
+    fi
+    log_Message "Installing zsh-autosuggestions plugin."
+    if git clone https://github.com/zsh-users/zsh-autosuggestions "$userDir/.oh-my-zsh/plugins/zsh-autosuggestions";
+    then
+        log_Message "Completed zsh-autosuggestions plugin install."
+    else
+        log_Message "Unable to complete zsh-autosuggestions plugin install."
+    fi
+    log_Message "Installing zsh-syntax-highlighting plugin."
+    if git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$userDir/.oh-my-zsh/plugins/zsh-syntax-highlighting";
+    then
+        log_Message "Completed zsh-syntax-highlighting plugin install."
+    else
+        log_Message "Unable to complete zsh-syntax-highlighting plugin install."
+    fi
     log_Message "Setting zsh theme and plugins."
     sed -i '' -e 's/^ZSH_THEME="robbyrussell"$/ZSH_THEME="powerlevel10k\/powerlevel10k"/' "$userDir/.zshrc"
     sed -i '' -e 's/^plugins=(git)$/plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)/' "$userDir/.zshrc"
@@ -355,7 +383,7 @@ function macOS_Dock() {
     dockCount=$(printf "$dockCheck" | grep -c 'file-label')
     if [[ ! "$dockCheck" == *"Alacritty"* ]];
     then
-        log_Message "Alacritty not found in Dock. Backing up Dock plist and removing persistent applications."
+        log_Message "Backing up Dock plist and removing persistent applications."
         cp "$userDir/Library/Preferences/com.apple.dock.plist" "$userDir/Library/Preferences/com.apple.dock.OGbackup.plist"
         for i in $(/usr/bin/seq 3 $dockCount);
         do
@@ -390,8 +418,7 @@ function macOS_AlacrittySecurity() {
             open "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension"
         fi
     else
-        log_Message "Alacritty not installed."
-        log_Message "Installing Alacritty using Homebrew."
+        log_Message "Alacritty not installed, installing using Homebrew."
         brew install --cask alacritty
     fi
 }
@@ -407,7 +434,12 @@ function neovim_Setup() {
         log_Message "Unable to locate Neovim config."
     fi
     log_Message "Installing vim-plug."
-    curl -fLo "$userDir/.config/nvim/autoload/plug.vim" --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+    if curl -fLo "$userDir/.config/nvim/autoload/plug.vim" --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim;
+    then
+        log_Message "Completed vim-plug install."
+    else
+        log_Message "Unable to complete vim-plug install."
+    fi
     log_Message "Completed Neovim setup."
 }
 
@@ -422,16 +454,14 @@ function alacritty_Setup() {
         local fontPath="$userDir/.local/share/fonts/Meslo/"
         local fontZIPPath="$userDir/.local/share/fonts/Meslo.zip"
     fi
-    curl -fLo "$fontZIPPath" --create-dirs https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip   
-    if [[ -f "$fontZIPPath" ]];
+    if curl -fLo "$fontZIPPath" --create-dirs https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip;
     then
         log_Message "Installing Meslo Nerd font."
         unzip "$fontZIPPath" -d "$fontPath"
     else
         log_Message "Meslo Nerd font not found."
     fi
-    curl -fLo "$userDir/.config/alacritty/master.zip" https://github.com/dracula/alacritty/archive/master.zip
-    if [[ -f "$userDir/.config/alacritty/master.zip" ]];
+    if curl -fLo "$userDir/.config/alacritty/master.zip" https://github.com/dracula/alacritty/archive/master.zip;
     then
         log_Message "Installing Dracula theme."
         unzip "$userDir/.config/alacritty/master.zip" -d "$userDir/.config/alacritty/"
