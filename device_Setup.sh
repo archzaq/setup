@@ -7,10 +7,10 @@
 ### - Configure neovim         ###
 ##################################
 
-archInstallArray=("alacritty" "fastfetch" "flatpak" "git" "htop" "jq" "neovim" "nodejs" "ranger" "remmina" "tmux" "unzip" "wl-clipboard" "zip")
-flatpakInstallArray=("io.gitlab.librewolf-community" "org.signal.Signal" "com.github.tchx84.Flatseal" "com.spotify.Client" "com.brave.Browser" "com.discordapp.Discord")
-macOSInstallArray=("fastfetch" "gh" "git" "jq" "neofetch" "neovim" "node" "ranger" "tmux" "tree")
-macOSInstallCaskArray=("alacritty" "discord" "firefox" "google-chrome" "imazing-profile-editor" "librewolf" "mullvad-browser" "mullvadvpn" "pppc-utility" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
+readonly archInstallArray=("alacritty" "fastfetch" "flatpak" "git" "htop" "jq" "neovim" "nodejs" "ranger" "remmina" "tmux" "unzip" "wl-clipboard" "zip")
+readonly flatpakInstallArray=("io.gitlab.librewolf-community" "org.signal.Signal" "com.github.tchx84.Flatseal" "com.spotify.Client" "com.brave.Browser" "com.discordapp.Discord")
+readonly macOSInstallArray=("fastfetch" "gh" "git" "jq" "neofetch" "neovim" "node" "ranger" "tmux" "tree")
+readonly macOSInstallCaskArray=("alacritty" "discord" "firefox" "google-chrome" "imazing-profile-editor" "librewolf" "mullvad-browser" "mullvadvpn" "pppc-utility" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
 readonly scriptDir="$(dirname "$0")"
 readonly userDir="$HOME"
 readonly defaultIconPath='/usr/local/jamfconnect/SLU.icns'
@@ -350,7 +350,7 @@ function macOS_Shell() {
 
 # Setup macOS dock to remove default apps and change orientation
 function macOS_Dock() {
-    log_Message "Checking Dock for Alacritty."
+    log_Message "Checking Dock configuration."
     dockCheck=$(/usr/bin/defaults read "$userDir/Library/Preferences/com.apple.dock.plist" "persistent-apps" | grep 'file-label')
     dockCount=$(printf "$dockCheck" | grep -c 'file-label')
     if [[ ! "$dockCheck" == *"Alacritty"* ]];
@@ -367,6 +367,7 @@ function macOS_Dock() {
             mv "$userDir/Library/Preferences/com.apple.dock.plist" "$userDir/Library/Preferences/com.apple.dock.failed.plist"
             cp "$userDir/Library/Preferences/com.apple.dock.OGbackup.plist" "$userDir/Library/Preferences/com.apple.dock.plist"
         else
+            log_Message "Orientating Dock to the left."
             /usr/bin/defaults write "$userDir/Library/Preferences/com.apple.dock.plist" "orientation" "left"
         fi
     fi
@@ -413,22 +414,33 @@ function neovim_Setup() {
 # Setup alacritty configuration file
 function alacritty_Setup() {
     log_Message "Setting up Alacritty."
+    if [[ "$osCheck" == 'macOS' ]];
+    then
+        local fontPath="$userDir/Library/Fonts/Meslo/"
+        local fontZIPPath="$userDir/Library/Fonts/Meslo.zip"
+    else
+        local fontPath="$userDir/.local/share/fonts/Meslo/"
+        local fontZIPPath="$userDir/.local/share/fonts/Meslo.zip"
+    fi
+    curl -fLo "$fontZIPPath" --create-dirs https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip   
+    if [[ -f "$fontZIPPath" ]];
+    then
+        log_Message "Installing Meslo Nerd font."
+        unzip "$fontZIPPath" -d "$fontPath"
+    else
+        log_Message "Meslo Nerd font not found."
+    fi
     curl -fLo "$userDir/.config/alacritty/master.zip" https://github.com/dracula/alacritty/archive/master.zip
     if [[ -f "$userDir/.config/alacritty/master.zip" ]];
     then
+        log_Message "Installing Dracula theme."
         unzip "$userDir/.config/alacritty/master.zip" -d "$userDir/.config/alacritty/"
     else
-        log_Message "Alacritty master.zip not found."
-    fi
-    curl -fLo "$userDir/Library/Fonts/Meslo.zip" --create-dirs https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip   
-    if [[ -f "$userDir/Library/Fonts/Meslo.zip" ]];
-    then
-        unzip "$userDir/Library/Fonts/Meslo.zip" -d "$userDir/Library/Fonts/Meslo/"
-    else
-        log_Message "Meslo font pack not found."
+        log_Message "Dracula theme not found."
     fi
     if [[ -f "$scriptDir/alacritty.toml" ]];
     then
+        log_Message "Copying alacritty.toml to config folder."
         cp "$scriptDir/alacritty.toml" "$userDir/.config/alacritty/"
     else
         log_Message "Alacritty config not found."
