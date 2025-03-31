@@ -350,12 +350,12 @@ function macOS_Shell() {
     else
         log_Message "Unable to complete oh-my-zsh install."
     fi
-    log_Message "Installing powerlevel10k plugin."
+    log_Message "Installing powerlevel10k theme."
     if git clone https://github.com/romkatv/powerlevel10k.git "$userDir/.oh-my-zsh/themes/powerlevel10k";
     then
-        log_Message "Completed powerlevel10k plugin install."
+        log_Message "Completed powerlevel10k theme install."
     else
-        log_Message "Unable to complete powerlevel10k plugin install."
+        log_Message "Unable to complete powerlevel10k theme install."
     fi
     log_Message "Installing zsh-autosuggestions plugin."
     if git clone https://github.com/zsh-users/zsh-autosuggestions "$userDir/.oh-my-zsh/plugins/zsh-autosuggestions";
