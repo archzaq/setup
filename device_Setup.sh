@@ -7,7 +7,7 @@
 ### - Configure neovim         ###
 ##################################
 
-readonly archInstallArray=("alacritty" "fastfetch" "flatpak" "git" "htop" "jq" "neovim" "nodejs" "ranger" "remmina" "tmux" "unzip" "wl-clipboard" "zip")
+readonly archInstallArray=("alacritty" "fastfetch" "flatpak" "git" "github-cli" "htop" "jq" "neovim" "nodejs" "ranger" "remmina" "tmux" "tree" "tuned" "unzip" "wl-clipboard" "zip")
 readonly flatpakInstallArray=("io.gitlab.librewolf-community" "org.signal.Signal" "com.github.tchx84.Flatseal" "com.spotify.Client" "com.brave.Browser" "com.discordapp.Discord")
 readonly macOSInstallArray=("fastfetch" "gh" "git" "jq" "neofetch" "neovim" "node" "ranger" "tmux" "tree")
 readonly macOSInstallCaskArray=("alacritty" "discord" "firefox" "google-chrome" "imazing-profile-editor" "librewolf" "mullvad-browser" "mullvadvpn" "pppc-utility" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
@@ -56,13 +56,21 @@ function create_Folderz() {
     else
         log_Message "Apps folder found."
     fi
+    if [[ ! -d "$userDir/Github" ]];
+    then
+        log_Message "Creating Github folder: $userDir/Github"
+        mkdir "$userDir/Github"
+    else
+        log_Message "Github folder found."
+    fi
+
     if [[ ! -d "$userDir/.config/nvim" ]];
     then
-        log_Message "Creating Alacritty/Neovim config folders."
+        log_Message "Creating Alacritty/Neovim ~/.config folders."
         mkdir -p "$userDir/.config/nvim/autoload"
         mkdir "$userDir/.config/alacritty"
     else
-        log_Message "Alacritty/Neovim config folders found."
+        log_Message "Alacritty/Neovim ~/.config folders found."
     fi
     log_Message "Completed folder creation."
 }
@@ -489,7 +497,7 @@ function main() {
     create_Folderz
     case "$osCheck" in
         'arch')
-            printf "XDG_DATA_DIR=\"/usr/local/share:/usr/share\"" | sudo tee -a /etc/environment
+            printf "XDG_DATA_DIR=\"/usr/local/share:/usr/share\"\n" | sudo tee -a /etc/environment
             if [[ ! -f "$userDir/.bashrc" ]];
             then
                 /usr/bin/touch "$userDir/.bashrc"
@@ -500,7 +508,6 @@ function main() {
             neovim_Setup
             alacritty_Setup
             ;;
-
         'fedora')
             if [[ ! -f "$userDir/.bashrc" ]];
             then
@@ -512,7 +519,6 @@ function main() {
             neovim_Setup
             alacritty_Setup
             ;;
-
         'macOS')
             if ! icon_Check;
             then
@@ -542,7 +548,6 @@ function main() {
             alacritty_Setup
             macOS_AlacrittySecurity
             ;;
-
         *)
             log_Message "Unable to determine OS."
             exit 1
