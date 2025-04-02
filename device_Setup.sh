@@ -553,6 +553,23 @@ function main() {
             exit 1
             ;;
     esac
+    if $(git --version &>/dev/null);
+    then
+        if git config --global user.email "129307974+archzaq@users.noreply.github.com";
+        then
+            log_Message "Set Github email."
+        else
+            log_Message "Unable to set Github email."
+        fi
+        if git config --global user.name "archzaq";
+        then
+            log_Message "Set Github user name."
+        else
+            log_Message "Unable to set Github user name."
+        fi
+    else
+        log_Message "Git command not found."
+    fi
     log_Message "Exiting!"
     exit 0
 }
