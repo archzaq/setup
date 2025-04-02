@@ -7,7 +7,7 @@
 ### - Configure neovim         ###
 ##################################
 
-readonly archInstallArray=("alacritty" "fastfetch" "flatpak" "git" "github-cli" "htop" "jq" "neovim" "nodejs" "ranger" "remmina" "tmux" "tree" "tuned" "unzip" "wl-clipboard" "zip")
+readonly archInstallArray=("alacritty" "fastfetch" "flatpak" "git" "github-cli" "htop" "jq" "man" "neovim" "nodejs" "ranger" "remmina" "tmux" "tree" "tuned" "unzip" "wl-clipboard" "zip")
 readonly flatpakInstallArray=("io.gitlab.librewolf-community" "org.signal.Signal" "com.github.tchx84.Flatseal" "com.spotify.Client" "com.brave.Browser" "com.discordapp.Discord")
 readonly macOSInstallArray=("fastfetch" "gh" "git" "jq" "neofetch" "neovim" "node" "ranger" "tmux" "tree")
 readonly macOSInstallCaskArray=("alacritty" "discord" "firefox" "google-chrome" "imazing-profile-editor" "librewolf" "mullvad-browser" "mullvadvpn" "pppc-utility" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
@@ -507,6 +507,26 @@ function main() {
             configrc_Setup "bashrc"
             neovim_Setup
             alacritty_Setup
+            if $(tuned-adm --version &>/dev/null);
+            then
+                sudo /usr/bin/systemctl enable tuned --now
+                log_Message "Device type:"
+                deviceChassis="$(/usr/bin/hostnamectl chassis &>/dev/null)"
+                case "$deviceChassis" in
+                    'laptop')
+                        log_Message "Laptop"
+                        /usr/bin/tuned-adm profile laptop-battery-powersave
+                        ;;
+                    'desktop')
+                        log_Message "Desktop"
+                        /usr/bin/tuned-adm profile desktop
+                        ;;
+                    *)
+                        log_Message "Unknown"
+                        log_Message "Unable to set tuned-adm profile."
+                        ;;
+                esac
+            fi
             ;;
         'fedora')
             if [[ ! -f "$userDir/.bashrc" ]];
