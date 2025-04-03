@@ -54,14 +54,14 @@ function create_Folderz() {
         log_Message "Creating Apps folder: $userDir/Apps"
         mkdir "$userDir/Apps"
     else
-        log_Message "Apps folder found."
+        log_Message "Apps folder located."
     fi
     if [[ ! -d "$userDir/Github" ]];
     then
         log_Message "Creating Github folder: $userDir/Github"
         mkdir "$userDir/Github"
     else
-        log_Message "Github folder found."
+        log_Message "Github folder located."
     fi
 
     if [[ ! -d "$userDir/.config/nvim" ]];
@@ -70,13 +70,13 @@ function create_Folderz() {
         mkdir -p "$userDir/.config/nvim/autoload"
         mkdir "$userDir/.config/alacritty"
     else
-        log_Message "Alacritty/Neovim ~/.config folders found."
+        log_Message "Alacritty/Neovim ~/.config folders located."
     fi
     log_Message "Completed folder creation."
 }
 
 # Install packages from archInstallArray that are not currently installed
-function arch_Install() {
+function arch_PackageInstall() {
     log_Message "Installing packages with pacman."
     sudo /usr/bin/pacman -Syyy
     for packageInstall in "${archInstallArray[@]}";
@@ -109,7 +109,7 @@ function flatpak_Install() {
         log_Message "Installing Rustdesk"
         flatpak install --user -y "$userDir/Apps/rustdesk.flatpak"
     else
-        log_Message "Rustdesk not installed."
+        log_Message "Unable to install Rustdesk."
     fi
     for pak in "${flatpakInstallArray[@]}";
     do
@@ -126,7 +126,7 @@ function configrc_Setup() {
     then
         printf "alias ll='ls -l --color=auto'\n" >> "$userDir/.$1"
         printf "alias lla='ls -la --color=auto'\n" >> "$userDir/.$1"
-        printf "alias scripts='cd ~/OneDrive\ -\ Saint\ Louis\ University/_JAMF/Scripts && ls'\n" >> "$userDir/.$1"
+        printf "alias scripts='cd ~/Github && ll'\n" >> "$userDir/.$1"
         printf "export EDITOR=/usr/bin/nvim\n" >> "$userDir/.$1"
     fi
     source "$userDir/.$1"
@@ -139,27 +139,27 @@ function icon_Check() {
     effectiveIconPath="$defaultIconPath"
     if [[ ! -f "$effectiveIconPath" ]];
     then
-        log_Message "No SLU icon found."
+        log_Message "Unable to locate SLU icon."
         if [[ -f '/usr/local/bin/jamf' ]];
         then
             log_Message "Attempting icon install via Jamf."
             /usr/local/bin/jamf policy -event SLUFonts
         else
-            log_Message "No Jamf binary found."
+            log_Message "Unable to locate Jamf binary."
         fi
         if [[ ! -f "$effectiveIconPath" ]];
         then
             if [[ -f "$genericIconPath" ]];
             then
-                log_Message "Generic icon found."
+                log_Message "Generic icon located."
                 effectiveIconPath="$genericIconPath"
             else
-                log_Message "Generic icon not found."
+                log_Message "Unable to locate generic icon."
                 return 1
             fi
         fi
     else
-        log_Message "SLU icon found."
+        log_Message "SLU icon located."
     fi
     log_Message "Completed icon file check."
     return 0
@@ -328,7 +328,7 @@ function macOS_HomebrewInstall() {
             fi
         done
         log_Message "Promping to download additional cask applications."
-        if binary_Dialog "Would you like to download additional cask Applications?";
+        if binary_Dialog "Would you like to download additional cask applications?";
         then
             for caskInstall in "${macOSInstallCaskArray[@]}";
             do
@@ -437,7 +437,7 @@ function neovim_Setup() {
     log_Message "Setting up Neovim."
     if [[ -f "$scriptDir/init.vim" ]];
     then
-        log_Message "Copying Neovim config."
+        log_Message "Copying Neovim config to ~/.config/nvim"
         cp "$scriptDir/init.vim" "$userDir/.config/nvim/init.vim"
     else
         log_Message "Unable to locate Neovim config."
@@ -465,24 +465,24 @@ function alacritty_Setup() {
     fi
     if curl -fLo "$fontZIPPath" --create-dirs https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip;
     then
-        log_Message "Installing Meslo Nerd font."
+        log_Message "Installing MesloLGL Nerd Font Mono."
         unzip "$fontZIPPath" -d "$fontPath"
     else
-        log_Message "Meslo Nerd font not found."
+        log_Message "Unable to locate MesloLGL Nerd Font Mono."
     fi
     if curl -fLo "$userDir/.config/alacritty/master.zip" https://github.com/dracula/alacritty/archive/master.zip;
     then
-        log_Message "Installing Dracula theme."
+        log_Message "Installing Alacritty Dracula theme."
         unzip "$userDir/.config/alacritty/master.zip" -d "$userDir/.config/alacritty/"
     else
-        log_Message "Dracula theme not found."
+        log_Message "Unable to locate Alacritty Dracula theme."
     fi
     if [[ -f "$scriptDir/alacritty.toml" ]];
     then
         log_Message "Copying alacritty.toml to config folder."
         cp "$scriptDir/alacritty.toml" "$userDir/.config/alacritty/"
     else
-        log_Message "Alacritty config not found."
+        log_Message "Unable to copy alacritty.toml to config folder."
     fi
     log_Message "Completed Alacritty setup."
 }
@@ -502,7 +502,7 @@ function main() {
             then
                 /usr/bin/touch "$userDir/.bashrc"
             fi
-            arch_Install
+            arch_PackageInstall
             flatpak_Install
             configrc_Setup "bashrc"
             neovim_Setup
@@ -515,10 +515,12 @@ function main() {
                 case "$deviceChassis" in
                     'laptop')
                         log_Message "Laptop"
+                        log_Message "Setting tuned-adm profile: laptop-battery-powersave"
                         /usr/bin/tuned-adm profile laptop-battery-powersave
                         ;;
                     'desktop')
                         log_Message "Desktop"
+                        log_Message "Setting tuned-adm profile: desktop"
                         /usr/bin/tuned-adm profile desktop
                         ;;
                     *)
@@ -588,7 +590,7 @@ function main() {
             log_Message "Unable to set Github user name."
         fi
     else
-        log_Message "Git command not found."
+        log_Message "Unable to locate Git command."
     fi
     log_Message "Exiting!"
     exit 0
