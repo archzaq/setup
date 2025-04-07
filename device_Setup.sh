@@ -77,7 +77,7 @@ function create_Folderz() {
 
 # Install packages from archInstallArray that are not currently installed
 function arch_PackageInstall() {
-    log_Message "Altering pacman.conf."
+    log_Message "Attempting to alter pacman.conf."
     if sudo sed -i 's/.*ParallelDownloads.*/ParallelDownloads = 5/g' /etc/pacman.conf;
     then
         log_Message "Set parallel downloads."
@@ -91,7 +91,7 @@ function arch_PackageInstall() {
         log_Message "Unable to set parallel downloads."
     fi
     log_Message "Completed altering pacman.conf."
-    log_Message "Installing packages with pacman."
+    log_Message "Beginning package install with pacman."
     sudo /usr/bin/pacman -Syyy
     for packageInstall in "${archInstallArray[@]}";
     do
@@ -108,14 +108,14 @@ function arch_PackageInstall() {
 
 # Will install packages from fedoraInstallArray that are not currently installed
 function fedora_Install() {
-    log_Message "Installing packages with dnf."
+    log_Message "Beginning package install with dnf."
     printf "WIP\n"
     log_Message "Completed installing packages with dnf."
 }
 
 # Install flatpaks from flatpakInstallArray, including Rustdesk
 function flatpak_Install() {
-    log_Message "Installing packages with flatpak."
+    log_Message "Beginning install with flatpak."
     flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     latestRelease=$(curl -s https://api.github.com/repos/rustdesk/rustdesk/releases/latest | jq -r .tag_name)
     if curl -fLo "$userDir/Apps/rustdesk.flatpak" "https://github.com/rustdesk/rustdesk/releases/download/${latestRelease}/rustdesk-${latestRelease#v}-${deviceArch}.flatpak";
@@ -330,7 +330,7 @@ function macOS_HomebrewInstall() {
     # Check again for homebrew before using binary
     if command -v brew &>/dev/null;
     then
-        log_Message "Installing applications using Homebrew."
+        log_Message "Beginning package install using Homebrew."
         for brewInstall in "${macOSInstallArray[@]}";
         do
             if brew list "$brewInstall" &>/dev/null;
@@ -523,9 +523,10 @@ function main() {
             alacritty_Setup
             if $(tuned-adm --version &>/dev/null);
             then
+                log_Message "Checking device to set tuned-adm profile."
                 sudo /usr/bin/systemctl enable tuned --now
                 log_Message "Device type:"
-                deviceChassis="$(/usr/bin/hostnamectl chassis &>/dev/null)"
+                deviceChassis="$(/usr/bin/hostnamectl chassis 2>/dev/null)"
                 case "$deviceChassis" in
                     'laptop')
                         log_Message "Laptop"
@@ -542,6 +543,7 @@ function main() {
                         log_Message "Unable to set tuned-adm profile."
                         ;;
                 esac
+                log_Message "Completed setting tuned-adm profile."
             fi
             ;;
         'fedora')
