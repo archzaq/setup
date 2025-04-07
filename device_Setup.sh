@@ -77,6 +77,20 @@ function create_Folderz() {
 
 # Install packages from archInstallArray that are not currently installed
 function arch_PackageInstall() {
+    log_Message "Altering pacman.conf."
+    if sudo sed -i 's/.*ParallelDownloads.*/ParallelDownloads = 5/g' /etc/pacman.conf;
+    then
+        log_Message "Set parallel downloads."
+        if sudo sed -i '/ParallelDownloads = 5/a ILoveCandy' /etc/pacman.conf;
+        then
+            log_Message "Set pacman loading icons."
+        else
+            log_Message "Unable to set pacman loading icons."
+        fi
+    else
+        log_Message "Unable to set parallel downloads."
+    fi
+    log_Message "Completed altering pacman.conf."
     log_Message "Installing packages with pacman."
     sudo /usr/bin/pacman -Syyy
     for packageInstall in "${archInstallArray[@]}";
@@ -90,19 +104,6 @@ function arch_PackageInstall() {
         fi
     done
     log_Message "Completed installing packages with pacman."
-    log_Message "Altering pacman.conf settings."
-    if sudo sed -i 's/.*ParallelDownloads.*/ParallelDownloads = 5/g' /etc/pacman.conf;
-    then
-        log_Message "Set parallel downloads."
-        if sudo sed -i '/ParallelDownloads = 5/a ILoveCandy' /etc/pacman.conf;
-        then
-            log_Message "Set pacman loading icons."
-        else
-            log_Message "Unable to set pacman loading icons."
-        fi
-    else
-        log_Message "Unable to set parallel downloads."
-    fi
 }
 
 # Will install packages from fedoraInstallArray that are not currently installed
