@@ -90,6 +90,19 @@ function arch_PackageInstall() {
         fi
     done
     log_Message "Completed installing packages with pacman."
+    log_Message "Altering pacman.conf settings."
+    if sudo sed -i 's/.*ParallelDownloads.*/ParallelDownloads = 5/g' /etc/pacman.conf;
+    then
+        log_Message "Set parallel downloads."
+        if sudo sed -i '/ParallelDownloads = 5/a ILoveCandy' /etc/pacman.conf;
+        then
+            log_Message "Set pacman loading icons."
+        else
+            log_Message "Unable to set pacman loading icons."
+        fi
+    else
+        log_Message "Unable to set parallel downloads."
+    fi
 }
 
 # Will install packages from fedoraInstallArray that are not currently installed
@@ -314,9 +327,9 @@ function macOS_HomebrewInstall() {
         fi
     fi
     # Check again for homebrew before using binary
-    log_Message "Installing applications using Homebrew."
     if command -v brew &>/dev/null;
     then
+        log_Message "Installing applications using Homebrew."
         for brewInstall in "${macOSInstallArray[@]}";
         do
             if brew list "$brewInstall" &>/dev/null;
@@ -343,10 +356,10 @@ function macOS_HomebrewInstall() {
         else
             log_Message "No additional applications installed."
         fi
+        log_Message "Completed Homebrew installation."
     else
         log_Message "Homebrew still not installed."
     fi
-    log_Message "Completed Homebrew installation."
 }
 
 # Setup macOS zsh plugins and theme
