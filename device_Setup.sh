@@ -125,10 +125,10 @@ function flatpak_Install() {
     else
         log_Message "Unable to install Rustdesk."
     fi
-    for pak in "${flatpakInstallArray[@]}";
+    for flatpak in "${flatpakInstallArray[@]}";
     do
-        log_Message "Installing $pak"
-        flatpak install --user -y flathub "$pak"
+        log_Message "Installing $flatpak"
+        flatpak install --user -y flathub "$flatpak"
     done
     log_Message "Completed installing packages with flatpak."
 }
@@ -327,7 +327,6 @@ function macOS_HomebrewInstall() {
             log_Message "Unable to complete Rosetta install."
         fi
     fi
-    # Check again for homebrew before using binary
     if command -v brew &>/dev/null;
     then
         log_Message "Beginning package install using Homebrew."
@@ -399,8 +398,8 @@ function macOS_Shell() {
     log_Message "Completed zsh configuration."
 }
 
-# Setup macOS dock to remove default apps and change orientation
-function macOS_Dock() {
+# Setup macOS dock to remove default apps and change orientation, then change menu bar spacing
+function macOS_DocknMenuBar() {
     log_Message "Checking Dock configuration."
     dockCheck=$(/usr/bin/defaults read "$userDir/Library/Preferences/com.apple.dock.plist" "persistent-apps" | grep 'file-label')
     dockCount=$(printf "$dockCheck" | grep -c 'file-label')
@@ -424,6 +423,20 @@ function macOS_Dock() {
     fi
     /usr/bin/killall Dock
     log_Message "Completed Dock configuration."
+    log_Message "Setting Menu Bar icon spacing."
+    if /usr/bin/defaults -currentHost write -globalDomain NSStatusItemSpacing -int 10;
+    then
+        log_Message "Successfully set Menu Bar icon spacing."
+        log_Message "Setting Menu Bar icon selection spacing."
+        if /usr/bin/defaults -currentHost write -globalDomain NSStatusItemSelectionPadding -int 8;
+        then
+            log_Message "Successfully set Menu Bar icon selection spacing."
+        else
+            log_Message "Unable to set Menu Bar icon selection spacing."
+        fi
+    else
+        log_Message "Unable to set Menu Bar icon spacing."
+    fi
 }
 
 # If alacritty is present, attempt to open it, then open security settings for approval
@@ -523,7 +536,7 @@ function main() {
             alacritty_Setup
             if $(tuned-adm --version &>/dev/null);
             then
-                log_Message "Checking device to set tuned-adm profile."
+                log_Message "Checking device type to set tuned-adm profile."
                 sudo /usr/bin/systemctl enable tuned --now
                 log_Message "Device type:"
                 deviceChassis="$(/usr/bin/hostnamectl chassis 2>/dev/null)"
@@ -580,7 +593,7 @@ function main() {
             fi
             macOS_HomebrewInstall
             macOS_Shell
-            macOS_Dock
+            macOS_DocknMenuBar
             configrc_Setup "zshrc"
             neovim_Setup
             alacritty_Setup
