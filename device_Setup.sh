@@ -63,7 +63,6 @@ function create_Folderz() {
     else
         log_Message "Github folder located."
     fi
-
     if [[ ! -d "$userDir/.config/nvim" ]];
     then
         log_Message "Creating Alacritty/Neovim ~/.config folders."
@@ -393,8 +392,8 @@ function macOS_Shell() {
         log_Message "Unable to complete zsh-syntax-highlighting plugin install."
     fi
     log_Message "Setting zsh theme and plugins."
-    sed -i '' -e 's/^ZSH_THEME="robbyrussell"$/ZSH_THEME="powerlevel10k\/powerlevel10k"/' "$userDir/.zshrc"
-    sed -i '' -e 's/^plugins=(git)$/plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)/' "$userDir/.zshrc"
+    sed -i '' -e 's/^ZSH_THEME=.*/ZSH_THEME="powerlevel10k\/powerlevel10k"/' "$userDir/.zshrc"
+    sed -i '' -e 's/^plugins=.*/plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)/' "$userDir/.zshrc"
     log_Message "Completed zsh configuration."
 }
 
@@ -604,6 +603,7 @@ function main() {
             exit 1
             ;;
     esac
+    log_Message "Setting Github email and name."
     if $(git --version &>/dev/null);
     then
         if git config --global user.email "129307974+archzaq@users.noreply.github.com";
@@ -621,6 +621,7 @@ function main() {
     else
         log_Message "Unable to locate Git command."
     fi
+    log_Message "Completed setting Github email and name."
     log_Message "Exiting!"
     exit 0
 }
