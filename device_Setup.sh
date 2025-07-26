@@ -7,8 +7,8 @@
 ### - Configure neovim         ###
 ##################################
 
-readonly archInstallArray=("alacritty" "fastfetch" "flatpak" "git" "github-cli" "htop" "jq" "man" "neovim" "nodejs" "ranger" "remmina" "tmux" "tree" "tuned" "unzip" "wl-clipboard" "zip")
-readonly flatpakInstallArray=("io.gitlab.librewolf-community" "org.signal.Signal" "com.github.tchx84.Flatseal" "com.spotify.Client" "com.brave.Browser" "com.discordapp.Discord")
+readonly archInstallArray=("alacritty" "dmenu" "fastfetch" "flatpak" "git" "github-cli" "htop" "i3-wm" "i3lock" "i3status" "jq" "man" "neovim" "nitrogen" "nodejs" "ranger" "remmina" "tmux" "tree" "tuned" "unzip" "wl-clipboard" "zip")
+readonly flatpakInstallArray=("com.brave.Browser" "com.discordapp.Discord" "com.github.tchx84.Flatseal" "io.gitlab.librewolf-community" "com.rustdesk.RustDesk" "org.signal.Signal" "com.spotify.Client")
 readonly macOSInstallArray=("fastfetch" "gh" "git" "jq" "neofetch" "neovim" "node" "ranger" "tmux" "tree")
 readonly macOSInstallCaskArray=("alacritty" "discord" "firefox" "google-chrome" "imazing-profile-editor" "librewolf" "mullvad-browser" "mullvadvpn" "pppc-utility" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
 readonly scriptDir="$(dirname "$0")"
@@ -74,22 +74,88 @@ function create_Folderz() {
     log_Message "Completed folder creation."
 }
 
-# Install packages from archInstallArray that are not currently installed
-function arch_PackageInstall() {
-    log_Message "Attempting to alter pacman.conf."
-    if sudo sed -i 's/.*ParallelDownloads.*/ParallelDownloads = 5/g' /etc/pacman.conf;
+function arch_ConfigFiles() {
+    local pacmanConf='/etc/pacman.conf'
+    if [ -f "$pacmanConf" ];
     then
-        log_Message "Set parallel downloads."
-        if sudo sed -i '/ParallelDownloads = 5/a ILoveCandy' /etc/pacman.conf;
+        log_Message "Attempting to alter pacman.conf."
+        if sudo sed -i 's/.*ParallelDownloads.*/ParallelDownloads = 5/g' $pacmanConf;
         then
-            log_Message "Set pacman loading icons."
+            log_Message "Set parallel downloads."
+            if sudo sed -i '/ParallelDownloads = 5/a ILoveCandy' $pacmanConf; 
+            then
+                log_Message "Set pacman loading icons."
+            else
+                log_Message "Unable to set pacman loading icons."
+            fi
         else
-            log_Message "Unable to set pacman loading icons."
+            log_Message "Unable to set parallel downloads."
+        fi
+        log_Message "Completed altering pacman.conf."
+    else
+        log_Message "Unable to locate pacman.conf at $pacmanConf"
+    fi
+
+    if [[ ! -d "$userDir/.config/i3" ]];
+    then
+        log_Message "Creating i3 folder: $userDir/.config/i3"
+        mkdir "$userDir/.config/i3"
+        mkdir "$userDir/.config/i3status"
+    else
+        log_Message "i3 folder located."
+    fi
+
+    local i3Conf="$userDir/.config/i3/config"
+    if [ -f "$i3Conf" ];
+    then
+        log_Message "Attempting to alter i3 config."
+        if sudo sed -i 's/set $mod Mod.*/set $mod Mod4/g' $i3Conf;
+        then
+            log_Message 'Set $mod to Mod4.'
+            if sudo sed -i '/set $mod Mod4/a exec --no-startup-id /usr/bin/nitrogen --restore' $i3Conf;
+            then
+                log_Message "Set Nitrogen to restore."
+            else
+                log_Message "Unable to set Nitrogen to restore."
+            fi
+        else
+            log_Message 'Unable to set $mod'
+        fi
+
+        if sudo sed -i 's/font pango.*/font pango:monospace 10/g' $i3Conf;
+        then
+            log_Message "Title bar font size changed to 10."
+        else
+            log_Message "Unable to change title bar font size."
+        fi
+
+        if sudo sed -i 's/bindsym $mod+Return exec.*/bindsym $mod+Return exec alacritty/g' $i3Conf;
+        then
+            log_Message "Changed terminal keybind to open Alacritty."
+        else
+            log_Message "Unable to change terminal keybind to Alacritty."
+        fi
+
+        if sudo sed -i 's/bindsym $mod+Shift+q kill/bindsym $mod+q kill/g' $i3Conf;
+        then
+            log_Message "Changed kill keybind to Super+Q."
+        else
+            log_Message "Unable to change kill keybind."
         fi
     else
-        log_Message "Unable to set parallel downloads."
+        log_Message "Unable to locate i3 config at $i3Conf"
+        if [[ -f "$scriptDir/config" ]];
+        then
+            log_Message "Copying i3 config to ~/.config/i3"
+            cp "$scriptDir/config" "$userDir/.config/i3/config"
+        else
+            log_Message "Unable to locate i3 config at $scriptDir."
+        fi
     fi
-    log_Message "Completed altering pacman.conf."
+}
+
+# Install packages from archInstallArray that are not currently installed
+function arch_PackageInstall() {
     log_Message "Beginning package install with pacman."
     sudo /usr/bin/pacman -Syyy
     for packageInstall in "${archInstallArray[@]}";
@@ -116,14 +182,6 @@ function fedora_Install() {
 function flatpak_Install() {
     log_Message "Beginning install with flatpak."
     flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-    latestRelease=$(curl -s https://api.github.com/repos/rustdesk/rustdesk/releases/latest | jq -r .tag_name)
-    if curl -fLo "$userDir/Apps/rustdesk.flatpak" "https://github.com/rustdesk/rustdesk/releases/download/${latestRelease}/rustdesk-${latestRelease#v}-${deviceArch}.flatpak";
-    then
-        log_Message "Installing Rustdesk"
-        flatpak install --user -y "$userDir/Apps/rustdesk.flatpak"
-    else
-        log_Message "Unable to install Rustdesk."
-    fi
     for flatpak in "${flatpakInstallArray[@]}";
     do
         log_Message "Installing $flatpak"
@@ -528,6 +586,7 @@ function main() {
             then
                 /usr/bin/touch "$userDir/.bashrc"
             fi
+            arch_ConfigFiles
             arch_PackageInstall
             flatpak_Install
             configrc_Setup "bashrc"
