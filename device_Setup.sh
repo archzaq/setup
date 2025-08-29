@@ -10,7 +10,7 @@
 readonly archInstallArray=("alacritty" "dmenu" "fastfetch" "flatpak" "git" "github-cli" "htop" "i3-wm" "i3lock" "i3status" "jq" "man" "neovim" "nitrogen" "nodejs" "ranger" "remmina" "tmux" "tree" "tuned" "unzip" "wl-clipboard" "zip")
 readonly flatpakInstallArray=("com.brave.Browser" "com.discordapp.Discord" "com.github.tchx84.Flatseal" "io.gitlab.librewolf-community" "com.rustdesk.RustDesk" "org.signal.Signal" "com.spotify.Client")
 readonly macOSInstallArray=("fastfetch" "gh" "git" "jq" "neofetch" "neovim" "node" "ranger" "tmux" "tree")
-readonly macOSInstallCaskArray=("alacritty" "discord" "firefox" "google-chrome" "imazing-profile-editor" "librewolf" "mullvad-browser" "mullvadvpn" "pppc-utility" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
+readonly macOSInstallCaskArray=("alacritty" "discord" "firefox" "google-chrome" "imazing-profile-editor" "librewolf" "mullvadvpn" "pppc-utility" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
 readonly scriptDir="$(dirname "$0")"
 readonly userDir="$HOME"
 readonly defaultIconPath='/usr/local/jamfconnect/SLU.icns'
@@ -532,6 +532,19 @@ function neovim_Setup() {
         log_Message "Completed vim-plug install."
     else
         log_Message "Unable to complete vim-plug install."
+    fi
+    if command -v nvim &>/dev/null;
+    then
+        if nvim -c 'CocInstall -sync coc-sh coc-clangd coc-sourcekit|q';
+        then
+            log_Message "Neovim extensions installed"
+        else
+            log_Message "Unable to install Neovim extensions, add extensions manually"
+            log_Message ":CocInstall coc-sh coc-clangd coc-sourcekit"
+        fi
+    else
+        log_Message "Unable to locate nvim, add nvim extensions manually"
+        log_Message ":CocInstall coc-sh coc-clangd coc-sourcekit"
     fi
     log_Message "Completed Neovim setup."
 }
