@@ -19,15 +19,15 @@ readonly logFile="$userDir/Desktop/device_Setup.log"
 
 # Append current status to log file
 function log_Message() {
-    local message="$1"
-    local type="${2:-Log}"
-    local timestamp="$(date "+%F %T")"
-    if [[ -w "$logFile" ]];
-    then
-        printf "%s: %s %s\n" "$type" "$timestamp" "$message" | tee -a "$logFile"
-    else
-        printf "%s: %s %s\n" "$type" "$timestamp" "$message"
-    fi
+    local message="$1"
+    local type="${2:-Log}"
+    local timestamp="$(date "+%F %T")"
+    if [[ -w "$logFile" ]];
+    then
+        printf "%s: %s %s\n" "$type" "$timestamp" "$message" | tee -a "$logFile"
+    else
+        printf "%s: %s %s\n" "$type" "$timestamp" "$message"
+    fi
 }
 
 # Check for the current OS
