@@ -215,15 +215,15 @@ function configrc_Setup() {
 
 # Check for valid icon file, AppleScript dialog boxes will error without it
 function check_Icon() {
-    if [[ ! -f "$genericIconPath" ]];
-    then
+    if [[ -f "$genericIconPath" ]];
+    then
         log_Message "Generic icon found"
         activeIcon="$genericIconPath"
         return 0
     else
         log_Message "Generic icon not found" "ERROR"
         return 1
-    fi
+    fi
 }
 
 # AppleScript - Create alert dialog window
