@@ -13,14 +13,21 @@ readonly macOSInstallArray=("fastfetch" "gh" "git" "jq" "neofetch" "neovim" "nod
 readonly macOSInstallCaskArray=("alacritty" "discord" "firefox" "google-chrome" "imazing-profile-editor" "librewolf" "mullvadvpn" "pppc-utility" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
 readonly scriptDir="$(dirname "$0")"
 readonly userDir="$HOME"
-readonly defaultIconPath='/usr/local/jamfconnect/SLU.icns'
 readonly genericIconPath='/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/Everyone.icns'
 readonly dialogTitle='Device Setup'
-readonly logPath="$userDir/Desktop/device_Setup.log"
+readonly logFile="$userDir/Desktop/device_Setup.log"
 
 # Append current status to log file
 function log_Message() {
-    printf "Log: $(date "+%F %T") %s\n" "$1" | tee -a "$logPath"
+    local message="$1"
+    local type="${2:-Log}"
+    local timestamp="$(date "+%F %T")"
+    if [[ -w "$logFile" ]];
+    then
+        printf "%s: %s %s\n" "$type" "$timestamp" "$message" | tee -a "$logFile"
+    else
+        printf "%s: %s %s\n" "$type" "$timestamp" "$message"
+    fi
 }
 
 # Check for the current OS
@@ -47,53 +54,53 @@ function check_OS() {
 }
 
 # Create the usual folders in Home directory
-function create_Folderz() {
-    log_Message "Creating folders in Home directory."
+function create_GeneralFolders() {
+    log_Message "Creating folders in Home directory"
     if [[ ! -d "$userDir/Apps" ]];
     then
         log_Message "Creating Apps folder: $userDir/Apps"
         mkdir "$userDir/Apps"
     else
-        log_Message "Apps folder located."
+        log_Message "Apps folder located"
     fi
     if [[ ! -d "$userDir/Github" ]];
     then
         log_Message "Creating Github folder: $userDir/Github"
         mkdir "$userDir/Github"
     else
-        log_Message "Github folder located."
+        log_Message "Github folder located"
     fi
     if [[ ! -d "$userDir/.config/nvim" ]];
     then
-        log_Message "Creating Alacritty/Neovim ~/.config folders."
+        log_Message "Creating Alacritty/Neovim ~/.config folders"
         mkdir -p "$userDir/.config/nvim/autoload"
         mkdir "$userDir/.config/alacritty"
     else
-        log_Message "Alacritty/Neovim ~/.config folders located."
+        log_Message "Alacritty/Neovim ~/.config folders located"
     fi
-    log_Message "Completed folder creation."
+    log_Message "Completed folder creation"
 }
 
 function arch_ConfigFiles() {
     local pacmanConf='/etc/pacman.conf'
     if [ -f "$pacmanConf" ];
     then
-        log_Message "Attempting to alter pacman.conf."
+        log_Message "Attempting to alter pacman.conf"
         if sudo sed -i 's/.*ParallelDownloads.*/ParallelDownloads = 5/g' $pacmanConf;
         then
-            log_Message "Set parallel downloads."
+            log_Message "Set parallel downloads"
             if sudo sed -i '/ParallelDownloads = 5/a ILoveCandy' $pacmanConf; 
             then
-                log_Message "Set pacman loading icons."
+                log_Message "Set pacman loading icons"
             else
-                log_Message "Unable to set pacman loading icons."
+                log_Message "Unable to set pacman loading icons" "WARN"
             fi
         else
-            log_Message "Unable to set parallel downloads."
+            log_Message "Unable to set parallel downloads" "WARN"
         fi
-        log_Message "Completed altering pacman.conf."
+        log_Message "Completed altering pacman.conf"
     else
-        log_Message "Unable to locate pacman.conf at $pacmanConf"
+        log_Message "Unable to locate pacman.conf at $pacmanConf" "WARN"
     fi
 
     if [[ ! -d "$userDir/.config/i3" ]];
@@ -102,61 +109,61 @@ function arch_ConfigFiles() {
         mkdir "$userDir/.config/i3"
         mkdir "$userDir/.config/i3status"
     else
-        log_Message "i3 folder located."
+        log_Message "i3 folder located"
     fi
 
     local i3Conf="$userDir/.config/i3/config"
     if [ -f "$i3Conf" ];
     then
-        log_Message "Attempting to alter i3 config."
+        log_Message "Attempting to alter i3 config"
         if sudo sed -i 's/set $mod Mod.*/set $mod Mod4/g' $i3Conf;
         then
-            log_Message 'Set $mod to Mod4.'
+            log_Message 'Set $mod to Mod4'
             if sudo sed -i '/set $mod Mod4/a exec --no-startup-id /usr/bin/nitrogen --restore' $i3Conf;
             then
-                log_Message "Set Nitrogen to restore."
+                log_Message "Set Nitrogen to restore"
             else
-                log_Message "Unable to set Nitrogen to restore."
+                log_Message "Unable to set Nitrogen to restore" "WARN"
             fi
         else
-            log_Message 'Unable to set $mod'
+            log_Message 'Unable to set $mod' "WARN"
         fi
 
         if sudo sed -i 's/font pango.*/font pango:monospace 10/g' $i3Conf;
         then
-            log_Message "Title bar font size changed to 10."
+            log_Message "Title bar font size changed to 10"
         else
-            log_Message "Unable to change title bar font size."
+            log_Message "Unable to change title bar font size" "WARN"
         fi
 
         if sudo sed -i 's/bindsym $mod+Return exec.*/bindsym $mod+Return exec alacritty/g' $i3Conf;
         then
-            log_Message "Changed terminal keybind to open Alacritty."
+            log_Message "Changed terminal keybind to open Alacritty"
         else
-            log_Message "Unable to change terminal keybind to Alacritty."
+            log_Message "Unable to change terminal keybind to Alacritty" "WARN"
         fi
 
         if sudo sed -i 's/bindsym $mod+Shift+q kill/bindsym $mod+q kill/g' $i3Conf;
         then
-            log_Message "Changed kill keybind to Super+Q."
+            log_Message "Changed kill keybind to Super+Q"
         else
-            log_Message "Unable to change kill keybind."
+            log_Message "Unable to change kill keybind" "WARN"
         fi
     else
-        log_Message "Unable to locate i3 config at $i3Conf"
+        log_Message "Unable to locate i3 config at $i3Conf" "WARN"
         if [[ -f "$scriptDir/config" ]];
         then
             log_Message "Copying i3 config to ~/.config/i3"
             cp "$scriptDir/config" "$userDir/.config/i3/config"
         else
-            log_Message "Unable to locate i3 config at $scriptDir."
+            log_Message "Unable to locate i3 config at $scriptDir" "WARN"
         fi
     fi
 }
 
 # Install packages from archInstallArray that are not currently installed
 function arch_PackageInstall() {
-    log_Message "Beginning package install with pacman."
+    log_Message "Beginning package install with pacman"
     sudo /usr/bin/pacman -Syyy
     for packageInstall in "${archInstallArray[@]}";
     do
@@ -165,81 +172,64 @@ function arch_PackageInstall() {
             log_Message "Installing $packageInstall"
             sudo /usr/bin/pacman -S "$packageInstall" --noconfirm
         else
-            log_Message "Skipping $packageInstall, already installed."
+            log_Message "Skipping $packageInstall, already installed"
         fi
     done
-    log_Message "Completed installing packages with pacman."
+    log_Message "Completed installing packages with pacman"
 }
 
 # Will install packages from fedoraInstallArray that are not currently installed
 function fedora_Install() {
-    log_Message "Beginning package install with dnf."
+    log_Message "Beginning package install with dnf"
     printf "WIP\n"
-    log_Message "Completed installing packages with dnf."
+    log_Message "Completed installing packages with dnf"
 }
 
 # Install flatpaks from flatpakInstallArray, including Rustdesk
 function flatpak_Install() {
-    log_Message "Beginning install with flatpak."
+    log_Message "Beginning install with flatpak"
     flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     for flatpak in "${flatpakInstallArray[@]}";
     do
         log_Message "Installing $flatpak"
         flatpak install --user -y flathub "$flatpak"
     done
-    log_Message "Completed installing packages with flatpak."
+    log_Message "Completed installing packages with flatpak"
 }
 
 # Setup bashrc/zshrc with alias and editor
 function configrc_Setup() {
-    log_Message "Adding entries to $1."
+    log_Message "Adding entries to $1"
     if [[ -f "$userDir/.$1" ]];
     then
         printf "alias ll='ls -l --color=auto'\n" >> "$userDir/.$1"
         printf "alias lla='ls -la --color=auto'\n" >> "$userDir/.$1"
         printf "alias scripts='cd ~/Github && ll'\n" >> "$userDir/.$1"
         printf "export EDITOR=/usr/bin/nvim\n" >> "$userDir/.$1"
+    else
+        log_Message "Unable to locate $1" "WARN"
     fi
     source "$userDir/.$1"
-    log_Message "Completed adding entries to $1."
+    log_Message "Completed adding entries to $1"
 }
 
 # Check for valid icon file, AppleScript dialog boxes will error without it
-function icon_Check() {
-    log_Message "Checking for icon file for AppleScript dialog windows."
-    effectiveIconPath="$defaultIconPath"
-    if [[ ! -f "$effectiveIconPath" ]];
-    then
-        log_Message "Unable to locate SLU icon."
-        if [[ -f '/usr/local/bin/jamf' ]];
-        then
-            log_Message "Attempting icon install via Jamf."
-            /usr/local/bin/jamf policy -event SLUFonts
-        else
-            log_Message "Unable to locate Jamf binary."
-        fi
-        if [[ ! -f "$effectiveIconPath" ]];
-        then
-            if [[ -f "$genericIconPath" ]];
-            then
-                log_Message "Generic icon located."
-                effectiveIconPath="$genericIconPath"
-            else
-                log_Message "Unable to locate generic icon."
-                return 1
-            fi
-        fi
+function check_Icon() {
+    if [[ ! -f "$genericIconPath" ]];
+    then
+        log_Message "Generic icon found"
+        activeIcon="$genericIconPath"
+        return 0
     else
-        log_Message "SLU icon located."
-    fi
-    log_Message "Completed icon file check."
-    return 0
+        log_Message "Generic icon not found" "ERROR"
+        return 1
+    fi
 }
 
 # AppleScript - Create alert dialog window
 function alert_Dialog() {
     local promptString="$1"
-    log_Message "Displaying alert dialog."
+    log_Message "Displaying alert dialog"
     alertDialog=$(/usr/bin/osascript <<OOP
     try
         set promptString to "$promptString"
@@ -256,13 +246,13 @@ OOP
     )
     case "$alertDialog" in
         'Error')
-            log_Message "Unable to show alert dialog."
+            log_Message "Unable to show alert dialog" "WARN"
             ;;
         'Timeout')
-            log_Message "Alert timed out."
+            log_Message "Alert timed out" "WARN"
             ;;
         *)
-            log_Message "Continued through alert dialog."
+            log_Message "Continued through alert dialog"
             ;;
     esac
 }
@@ -271,7 +261,7 @@ OOP
 function textField_Dialog() {
     local promptString="$1"
     local count=1
-    log_Message "Displaying text field dialog."
+    log_Message "Displaying text field dialog"
     while [[ $count -le 10 ]];
     do
         textFieldDialog=$(/usr/bin/osascript <<OOP
@@ -297,12 +287,12 @@ OOP
                 return 1
                 ;;
             'Timeout')
-                log_Message "No response, re-prompting ($count/10)."
+                log_Message "No response, re-prompting ($count/10)" "WARN"
                 ((count++))
                 ;;
             '')
-                log_Message "Nothing entered in text field."
-                alert_Dialog "Please enter something."
+                log_Message "Nothing entered in text field"
+                alert_Dialog "Please enter something"
                 ;;
             *)
                 log_Message "User responded: $textFieldDialog"
@@ -317,7 +307,7 @@ OOP
 function binary_Dialog() {
     local promptString="$1"
     local count=1
-    log_Message "Displaying binary dialog."
+    log_Message "Displaying binary dialog"
     while [[ $count -le 10 ]];
     do
         binDialog=$(/usr/bin/osascript <<OOP
@@ -343,7 +333,7 @@ OOP
                 return 1
                 ;;
             'Timeout')
-                log_Message "No response, re-prompting ($count/10)."
+                log_Message "No response, re-prompting ($count/10)" "WARN"
                 ((count++))
                 ;;
             *)
@@ -357,47 +347,47 @@ OOP
 
 # Install homebrew, rosetta if needed, then bunch of brew apps
 function macOS_HomebrewInstall() {
-    log_Message "Beginning Homebrew installation."
+    log_Message "Beginning Homebrew installation"
     if ! command -v brew &> /dev/null;
     then
-        log_Message "Installing Homebrew."
+        log_Message "Installing Homebrew"
         if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)";
         then
-            log_Message "Completed Homebrew install."
+            log_Message "Completed Homebrew install"
         else
-            log_Message "Unable to complete Homebrew install."
+            log_Message "Unable to complete Homebrew install" "WARN"
         fi
     else
-        log_Message "Skipping Homebrew, already installed."
+        log_Message "Skipping Homebrew, already installed"
     fi
     if [[ "$deviceArch" == 'arm64' ]];
     then
-        log_Message "Setting up Homebrew shell env."
+        log_Message "Setting up Homebrew shell env"
         printf 'eval "$(/opt/homebrew/bin/brew shellenv)"\n' >> "$userDir/.zprofile"
         eval "$(/opt/homebrew/bin/brew shellenv)"
-        log_Message "Completed Homebrew shell env setup."
-        log_Message "Installing Rosetta."
+        log_Message "Completed Homebrew shell env setup"
+        log_Message "Installing Rosetta"
         if /usr/sbin/softwareupdate --install-rosetta --agree-to-license;
         then
-            log_Message "Completed Rosetta install."
+            log_Message "Completed Rosetta install"
         else
-            log_Message "Unable to complete Rosetta install."
+            log_Message "Unable to complete Rosetta install" "WARN"
         fi
     fi
     if command -v brew &>/dev/null;
     then
-        log_Message "Beginning package install using Homebrew."
+        log_Message "Beginning package install using Homebrew"
         for brewInstall in "${macOSInstallArray[@]}";
         do
             if brew list "$brewInstall" &>/dev/null;
             then
-                log_Message "Skipping $brewInstall, already installed."
+                log_Message "Skipping $brewInstall, already installed"
             else
                 log_Message "Installing $brewInstall"
                 brew install "$brewInstall"
             fi
         done
-        log_Message "Promping to download additional cask applications."
+        log_Message "Promping to download additional cask applications"
         if binary_Dialog "Would you like to download additional cask applications?";
         then
             for caskInstall in "${macOSInstallCaskArray[@]}";
@@ -411,58 +401,58 @@ function macOS_HomebrewInstall() {
                 fi
             done
         else
-            log_Message "No additional applications installed."
+            log_Message "No additional applications installed"
         fi
-        log_Message "Completed Homebrew installation."
+        log_Message "Completed Homebrew installation"
     else
-        log_Message "Homebrew still not installed."
+        log_Message "Homebrew still not installed" "WARN"
     fi
 }
 
 # Setup macOS zsh plugins and theme
 function macOS_Shell() {
-    log_Message "Installing oh-my-zsh."
+    log_Message "Installing oh-my-zsh"
     if sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended;
     then
-        log_Message "Completed oh-my-zsh install."
+        log_Message "Completed oh-my-zsh install"
     else
-        log_Message "Unable to complete oh-my-zsh install."
+        log_Message "Unable to complete oh-my-zsh install" "WARN"
     fi
-    log_Message "Installing powerlevel10k theme."
+    log_Message "Installing powerlevel10k theme"
     if git clone https://github.com/romkatv/powerlevel10k.git "$userDir/.oh-my-zsh/themes/powerlevel10k";
     then
-        log_Message "Completed powerlevel10k theme install."
+        log_Message "Completed powerlevel10k theme install"
     else
-        log_Message "Unable to complete powerlevel10k theme install."
+        log_Message "Unable to complete powerlevel10k theme install" "WARN"
     fi
-    log_Message "Installing zsh-autosuggestions plugin."
+    log_Message "Installing zsh-autosuggestions plugin"
     if git clone https://github.com/zsh-users/zsh-autosuggestions "$userDir/.oh-my-zsh/plugins/zsh-autosuggestions";
     then
-        log_Message "Completed zsh-autosuggestions plugin install."
+        log_Message "Completed zsh-autosuggestions plugin install"
     else
-        log_Message "Unable to complete zsh-autosuggestions plugin install."
+        log_Message "Unable to complete zsh-autosuggestions plugin install" "WARN"
     fi
-    log_Message "Installing zsh-syntax-highlighting plugin."
+    log_Message "Installing zsh-syntax-highlighting plugin"
     if git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$userDir/.oh-my-zsh/plugins/zsh-syntax-highlighting";
     then
-        log_Message "Completed zsh-syntax-highlighting plugin install."
+        log_Message "Completed zsh-syntax-highlighting plugin install"
     else
-        log_Message "Unable to complete zsh-syntax-highlighting plugin install."
+        log_Message "Unable to complete zsh-syntax-highlighting plugin install" "WARN"
     fi
-    log_Message "Setting zsh theme and plugins."
+    log_Message "Setting zsh theme and plugins"
     sed -i '' -e 's/^ZSH_THEME=.*/ZSH_THEME="powerlevel10k\/powerlevel10k"/' "$userDir/.zshrc"
     sed -i '' -e 's/^plugins=.*/plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)/' "$userDir/.zshrc"
-    log_Message "Completed zsh configuration."
+    log_Message "Completed zsh configuration"
 }
 
 # Setup macOS dock to remove default apps and change orientation, then change menu bar spacing
 function macOS_DocknMenuBar() {
-    log_Message "Checking Dock configuration."
+    log_Message "Checking Dock configuration"
     dockCheck=$(/usr/bin/defaults read "$userDir/Library/Preferences/com.apple.dock.plist" "persistent-apps" | grep 'file-label')
     dockCount=$(printf "$dockCheck" | grep -c 'file-label')
     if [[ ! "$dockCheck" == *"Alacritty"* ]];
     then
-        log_Message "Backing up Dock plist and removing persistent applications."
+        log_Message "Backing up Dock plist and removing persistent applications"
         cp "$userDir/Library/Preferences/com.apple.dock.plist" "$userDir/Library/Preferences/com.apple.dock.OGbackup.plist"
         for i in $(/usr/bin/seq 3 $dockCount);
         do
@@ -470,40 +460,40 @@ function macOS_DocknMenuBar() {
         done
         if [[ ! $(/usr/bin/plutil -lint "$userDir/Library/Preferences/com.apple.dock.plist") == *'OK'* ]];
         then
-            log_Message "Reverting changes to Dock."
+            log_Message "Reverting changes to Dock"
             mv "$userDir/Library/Preferences/com.apple.dock.plist" "$userDir/Library/Preferences/com.apple.dock.failed.plist"
             cp "$userDir/Library/Preferences/com.apple.dock.OGbackup.plist" "$userDir/Library/Preferences/com.apple.dock.plist"
         else
-            log_Message "Orientating Dock to the left."
+            log_Message "Orientating Dock to the left"
             /usr/bin/defaults write "$userDir/Library/Preferences/com.apple.dock.plist" "orientation" "left"
         fi
     fi
     /usr/bin/killall Dock
-    log_Message "Completed Dock configuration."
-    log_Message "Setting Menu Bar icon spacing."
+    log_Message "Completed Dock configuration"
+    log_Message "Setting Menu Bar icon spacing"
     if /usr/bin/defaults -currentHost write -globalDomain NSStatusItemSpacing -int 10;
     then
-        log_Message "Successfully set Menu Bar icon spacing."
-        log_Message "Setting Menu Bar icon selection spacing."
+        log_Message "Successfully set Menu Bar icon spacing"
+        log_Message "Setting Menu Bar icon selection spacing"
         if /usr/bin/defaults -currentHost write -globalDomain NSStatusItemSelectionPadding -int 8;
         then
-            log_Message "Successfully set Menu Bar icon selection spacing."
+            log_Message "Successfully set Menu Bar icon selection spacing"
         else
-            log_Message "Unable to set Menu Bar icon selection spacing."
+            log_Message "Unable to set Menu Bar icon selection spacing" "WARN"
         fi
     else
-        log_Message "Unable to set Menu Bar icon spacing."
+        log_Message "Unable to set Menu Bar icon spacing" "WARN"
     fi
 }
 
 # If alacritty is present, attempt to open it, then open security settings for approval
 function macOS_AlacrittySecurity() {
-    log_Message "Attempting to open Alacritty to then allow it though Gatekeeper."
+    log_Message "Attempting to open Alacritty to then allow it though Gatekeeper"
     if [[ -d "/Applications/Alacritty.app" ]];
     then
-        log_Message "Opening Alacritty."
+        log_Message "Opening Alacritty"
         /usr/bin/open /Applications/Alacritty.app &
-        log_Message "Opening Privacy & Security Settings."
+        log_Message "Opening Privacy & Security Settings"
         if [[ $(sw_vers -productVersion) < 13.0 ]];
         then
             open "x-apple.systempreferences:com.apple.preference.security"
@@ -511,27 +501,27 @@ function macOS_AlacrittySecurity() {
             open "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension"
         fi
     else
-        log_Message "Alacritty not installed, installing using Homebrew."
+        log_Message "Alacritty not installed, installing using Homebrew"
         brew install --cask alacritty
     fi
 }
 
 # Setup neovim configuration file and plugin
 function neovim_Setup() {
-    log_Message "Setting up Neovim."
+    log_Message "Setting up Neovim"
     if [[ -f "$scriptDir/init.vim" ]];
     then
         log_Message "Copying Neovim config to ~/.config/nvim"
         cp "$scriptDir/init.vim" "$userDir/.config/nvim/init.vim"
     else
-        log_Message "Unable to locate Neovim config."
+        log_Message "Unable to locate Neovim config" "WARN"
     fi
-    log_Message "Installing vim-plug."
+    log_Message "Installing vim-plug"
     if curl -fLo "$userDir/.config/nvim/autoload/plug.vim" --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim;
     then
-        log_Message "Completed vim-plug install."
+        log_Message "Completed vim-plug install"
     else
-        log_Message "Unable to complete vim-plug install."
+        log_Message "Unable to complete vim-plug install" "WARN"
     fi
     if command -v nvim &>/dev/null;
     then
@@ -539,19 +529,19 @@ function neovim_Setup() {
         then
             log_Message "Neovim extensions installed"
         else
-            log_Message "Unable to install Neovim extensions, add extensions manually"
+            log_Message "Unable to install Neovim extensions, add extensions manually" "WARN"
             log_Message ":CocInstall coc-sh coc-clangd coc-sourcekit"
         fi
     else
-        log_Message "Unable to locate nvim, add nvim extensions manually"
+        log_Message "Unable to locate nvim, add nvim extensions manually" "WARN"
         log_Message ":CocInstall coc-sh coc-clangd coc-sourcekit"
     fi
-    log_Message "Completed Neovim setup."
+    log_Message "Completed Neovim setup"
 }
 
 # Setup alacritty configuration file
 function alacritty_Setup() {
-    log_Message "Setting up Alacritty."
+    log_Message "Setting up Alacritty"
     if [[ "$osCheck" == 'macOS' ]];
     then
         local fontPath="$userDir/Library/Fonts/Meslo/"
@@ -562,36 +552,44 @@ function alacritty_Setup() {
     fi
     if curl -fLo "$fontZIPPath" --create-dirs https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip;
     then
-        log_Message "Installing MesloLGL Nerd Font Mono."
+        log_Message "Installing MesloLGL Nerd Font Mono"
         unzip "$fontZIPPath" -d "$fontPath"
     else
-        log_Message "Unable to locate MesloLGL Nerd Font Mono."
+        log_Message "Unable to locate MesloLGL Nerd Font Mono" "WARN"
     fi
     if curl -fLo "$userDir/.config/alacritty/master.zip" https://github.com/dracula/alacritty/archive/master.zip;
     then
-        log_Message "Installing Alacritty Dracula theme."
+        log_Message "Installing Alacritty Dracula theme"
         unzip "$userDir/.config/alacritty/master.zip" -d "$userDir/.config/alacritty/"
     else
-        log_Message "Unable to locate Alacritty Dracula theme."
+        log_Message "Unable to locate Alacritty Dracula theme" "WARN"
     fi
     if [[ -f "$scriptDir/alacritty.toml" ]];
     then
-        log_Message "Copying alacritty.toml to config folder."
+        log_Message "Copying alacritty.toml to config folder"
         cp "$scriptDir/alacritty.toml" "$userDir/.config/alacritty/"
     else
-        log_Message "Unable to copy alacritty.toml to config folder."
+        log_Message "Unable to copy alacritty.toml to config folder" "WARN"
     fi
-    log_Message "Completed Alacritty setup."
+    log_Message "Completed Alacritty setup"
 }
 
 function main() {
-    printf "Log: $(date "+%F %T") Beginning Device Setup script.\n" | tee "$logPath"
+    if [[ -w "$logFile" ]];
+    then
+        printf "Log: $(date "+%F %T") Beginning Device Setup script\n" | tee "$logFile"
+    else
+        printf "Log: $(date "+%F %T") Beginning Device Setup script\n"
+    fi
+
     if ! check_OS;
     then
-        log_Message "Unable to determine OS."
+        log_Message "Unable to determine OS" "ERROR"
         exit 1
     fi
-    create_Folderz
+
+    create_GeneralFolders
+
     case "$osCheck" in
         'arch')
             printf "XDG_DATA_DIR=\"/usr/local/share:/usr/share\"\n" | sudo tee -a /etc/environment
@@ -607,7 +605,7 @@ function main() {
             alacritty_Setup
             if $(tuned-adm --version &>/dev/null);
             then
-                log_Message "Checking device type to set tuned-adm profile."
+                log_Message "Checking device type to set tuned-adm profile"
                 sudo /usr/bin/systemctl enable tuned --now
                 log_Message "Device type:"
                 deviceChassis="$(/usr/bin/hostnamectl chassis 2>/dev/null)"
@@ -624,10 +622,10 @@ function main() {
                         ;;
                     *)
                         log_Message "Unknown"
-                        log_Message "Unable to set tuned-adm profile."
+                        log_Message "Unable to set tuned-adm profile" "WARN"
                         ;;
                 esac
-                log_Message "Completed setting tuned-adm profile."
+                log_Message "Completed setting tuned-adm profile"
             fi
             ;;
         'fedora')
@@ -642,20 +640,20 @@ function main() {
             alacritty_Setup
             ;;
         'macOS')
-            if ! icon_Check;
+            if ! check_Icon;
             then
                 alert_Dialog "Missing required icon files!"
-                log_Message "Exiting for no icon."
+                log_Message "Exiting for no icon" "ERROR"
                 exit 1
             fi
             if [[ ! -f "$userDir/.zshrc" ]];
             then
                 /usr/bin/touch "$userDir/.zshrc"
             fi
-            log_Message "Prompting to name the device."
+            log_Message "Prompting to name the device"
             if ! textField_Dialog "Please enter your desired device name:";
             then
-                log_Message "Device not renamed."
+                log_Message "Device not renamed" "WARN"
             else
                 /usr/sbin/scutil --set ComputerName $textFieldDialog
                 /usr/sbin/scutil --set LocalHostName $textFieldDialog
@@ -671,29 +669,29 @@ function main() {
             macOS_AlacrittySecurity
             ;;
         *)
-            log_Message "Unable to determine OS."
+            log_Message "Unable to determine OS" "ERROR"
             exit 1
             ;;
     esac
-    log_Message "Setting Github email and name."
+    log_Message "Setting Github email and name"
     if $(git --version &>/dev/null);
     then
         if git config --global user.email "129307974+archzaq@users.noreply.github.com";
         then
-            log_Message "Set Github email."
+            log_Message "Set Github email"
         else
-            log_Message "Unable to set Github email."
+            log_Message "Unable to set Github email" "WARN"
         fi
         if git config --global user.name "archzaq";
         then
-            log_Message "Set Github user name."
+            log_Message "Set Github user name"
         else
-            log_Message "Unable to set Github user name."
+            log_Message "Unable to set Github user name" "WARN"
         fi
+        log_Message "Completed setting Github email and name"
     else
-        log_Message "Unable to locate Git command."
+        log_Message "Unable to locate Git command" "WARN"
     fi
-    log_Message "Completed setting Github email and name."
     log_Message "Exiting!"
     exit 0
 }
