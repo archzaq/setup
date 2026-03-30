@@ -525,7 +525,7 @@ function neovim_Setup() {
 	fi
 	if command -v nvim &>/dev/null;
 	then
-		if nvim -c 'PlugInstall';
+		if nvim -c 'PlugInstall|q';
 		then
 			log_Message "Neovim plugins installed"
 		else
