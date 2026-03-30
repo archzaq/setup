@@ -89,7 +89,10 @@ function arch_ConfigFiles() {
 		if sudo sed -i 's/.*ParallelDownloads.*/ParallelDownloads = 5/g' $pacmanConf;
 		then
 			log_Message "Set parallel downloads"
-			if sudo sed -i '/ParallelDownloads = 5/a ILoveCandy' $pacmanConf; 
+			if grep -q 'ILoveCandy' "$pacmanConf";
+			then
+				log_Message "Pacman loading icons already set"
+			elif sudo sed -i '/ParallelDownloads = 5/a ILoveCandy' $pacmanConf;
 			then
 				log_Message "Set pacman loading icons"
 			else
@@ -119,7 +122,10 @@ function arch_ConfigFiles() {
 		if sudo sed -i 's/set $mod Mod.*/set $mod Mod4/g' $i3Conf;
 		then
 			log_Message 'Set $mod to Mod4'
-			if sudo sed -i '/set $mod Mod4/a exec --no-startup-id /usr/bin/nitrogen --restore' $i3Conf;
+			if grep -q 'nitrogen --restore' "$i3Conf";
+			then
+				log_Message "Nitrogen restore already set"
+			elif sudo sed -i '/set $mod Mod4/a exec --no-startup-id /usr/bin/nitrogen --restore' $i3Conf;
 			then
 				log_Message "Set Nitrogen to restore"
 			else
@@ -191,8 +197,13 @@ function flatpak_Install() {
 	flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 	for flatpak in "${flatpakInstallArray[@]}";
 	do
-		log_Message "Installing $flatpak"
-		flatpak install --user -y flathub "$flatpak"
+		if flatpak list --app --columns=application | grep -q "$flatpak";
+		then
+			log_Message "Skipping $flatpak, already installed"
+		else
+			log_Message "Installing $flatpak"
+			flatpak install --user -y flathub "$flatpak"
+		fi
 	done
 	log_Message "Completed installing packages with flatpak"
 }
@@ -202,10 +213,10 @@ function configrc_Setup() {
 	log_Message "Adding entries to $1"
 	if [[ -f "$userDir/.$1" ]];
 	then
-		printf "alias ll='ls -l --color=auto'\n" >> "$userDir/.$1"
-		printf "alias lla='ls -la --color=auto'\n" >> "$userDir/.$1"
-		printf "alias scripts='cd ~/Github && ll'\n" >> "$userDir/.$1"
-		printf "export EDITOR=/usr/bin/nvim\n" >> "$userDir/.$1"
+		grep -q "alias ll='ls -l --color=auto'" "$userDir/.$1" || printf "alias ll='ls -l --color=auto'\n" >> "$userDir/.$1"
+		grep -q "alias lla='ls -la --color=auto'" "$userDir/.$1" || printf "alias lla='ls -la --color=auto'\n" >> "$userDir/.$1"
+		grep -q "alias scripts='cd ~/Github && ll'" "$userDir/.$1" || printf "alias scripts='cd ~/Github && ll'\n" >> "$userDir/.$1"
+		grep -q "export EDITOR=/usr/bin/nvim" "$userDir/.$1" || printf "export EDITOR=/usr/bin/nvim\n" >> "$userDir/.$1"
 	else
 		log_Message "Unable to locate $1" "WARN"
 	fi
@@ -363,7 +374,7 @@ function macOS_HomebrewInstall() {
 	if [[ "$deviceArch" == 'arm64' ]];
 	then
 		log_Message "Setting up Homebrew shell env"
-		printf 'eval "$(/opt/homebrew/bin/brew shellenv)"\n' >> "$userDir/.zprofile"
+		grep -q 'brew shellenv' "$userDir/.zprofile" 2>/dev/null || printf 'eval "$(/opt/homebrew/bin/brew shellenv)"\n' >> "$userDir/.zprofile"
 		eval "$(/opt/homebrew/bin/brew shellenv)"
 		log_Message "Completed Homebrew shell env setup"
 		log_Message "Installing Rosetta"
@@ -411,33 +422,53 @@ function macOS_HomebrewInstall() {
 
 # Setup macOS zsh plugins and theme
 function macOS_Shell() {
-	log_Message "Installing oh-my-zsh"
-	if sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended;
+	if [[ -d "$userDir/.oh-my-zsh" ]];
 	then
-		log_Message "Completed oh-my-zsh install"
+		log_Message "oh-my-zsh already installed"
 	else
-		log_Message "Unable to complete oh-my-zsh install" "WARN"
+		log_Message "Installing oh-my-zsh"
+		if sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended;
+		then
+			log_Message "Completed oh-my-zsh install"
+		else
+			log_Message "Unable to complete oh-my-zsh install" "WARN"
+		fi
 	fi
-	log_Message "Installing powerlevel10k theme"
-	if git clone https://github.com/romkatv/powerlevel10k.git "$userDir/.oh-my-zsh/themes/powerlevel10k";
+	if [[ -d "$userDir/.oh-my-zsh/themes/powerlevel10k" ]];
 	then
-		log_Message "Completed powerlevel10k theme install"
+		log_Message "powerlevel10k theme already installed"
 	else
-		log_Message "Unable to complete powerlevel10k theme install" "WARN"
+		log_Message "Installing powerlevel10k theme"
+		if git clone https://github.com/romkatv/powerlevel10k.git "$userDir/.oh-my-zsh/themes/powerlevel10k";
+		then
+			log_Message "Completed powerlevel10k theme install"
+		else
+			log_Message "Unable to complete powerlevel10k theme install" "WARN"
+		fi
 	fi
-	log_Message "Installing zsh-autosuggestions plugin"
-	if git clone https://github.com/zsh-users/zsh-autosuggestions "$userDir/.oh-my-zsh/plugins/zsh-autosuggestions";
+	if [[ -d "$userDir/.oh-my-zsh/plugins/zsh-autosuggestions" ]];
 	then
-		log_Message "Completed zsh-autosuggestions plugin install"
+		log_Message "zsh-autosuggestions plugin already installed"
 	else
-		log_Message "Unable to complete zsh-autosuggestions plugin install" "WARN"
+		log_Message "Installing zsh-autosuggestions plugin"
+		if git clone https://github.com/zsh-users/zsh-autosuggestions "$userDir/.oh-my-zsh/plugins/zsh-autosuggestions";
+		then
+			log_Message "Completed zsh-autosuggestions plugin install"
+		else
+			log_Message "Unable to complete zsh-autosuggestions plugin install" "WARN"
+		fi
 	fi
-	log_Message "Installing zsh-syntax-highlighting plugin"
-	if git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$userDir/.oh-my-zsh/plugins/zsh-syntax-highlighting";
+	if [[ -d "$userDir/.oh-my-zsh/plugins/zsh-syntax-highlighting" ]];
 	then
-		log_Message "Completed zsh-syntax-highlighting plugin install"
+		log_Message "zsh-syntax-highlighting plugin already installed"
 	else
-		log_Message "Unable to complete zsh-syntax-highlighting plugin install" "WARN"
+		log_Message "Installing zsh-syntax-highlighting plugin"
+		if git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$userDir/.oh-my-zsh/plugins/zsh-syntax-highlighting";
+		then
+			log_Message "Completed zsh-syntax-highlighting plugin install"
+		else
+			log_Message "Unable to complete zsh-syntax-highlighting plugin install" "WARN"
+		fi
 	fi
 	log_Message "Setting zsh theme and plugins"
 	sed -i '' -e 's/^ZSH_THEME=.*/ZSH_THEME="powerlevel10k\/powerlevel10k"/' "$userDir/.zshrc"
@@ -511,17 +542,27 @@ function neovim_Setup() {
 	log_Message "Setting up Neovim"
 	if [[ -f "$scriptDir/init.vim" ]];
 	then
-		log_Message "Copying Neovim config to ~/.config/nvim"
-		cp "$scriptDir/init.vim" "$userDir/.config/nvim/init.vim"
+		if cmp -s "$scriptDir/init.vim" "$userDir/.config/nvim/init.vim";
+		then
+			log_Message "Neovim config already up to date"
+		else
+			log_Message "Copying Neovim config to ~/.config/nvim"
+			cp "$scriptDir/init.vim" "$userDir/.config/nvim/init.vim"
+		fi
 	else
 		log_Message "Unable to locate Neovim config" "WARN"
 	fi
-	log_Message "Installing vim-plug"
-	if curl -fLo "$userDir/.config/nvim/autoload/plug.vim" --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim;
+	if [[ -f "$userDir/.config/nvim/autoload/plug.vim" ]];
 	then
-		log_Message "Completed vim-plug install"
+		log_Message "vim-plug already installed"
 	else
-		log_Message "Unable to complete vim-plug install" "WARN"
+		log_Message "Installing vim-plug"
+		if curl -fLo "$userDir/.config/nvim/autoload/plug.vim" --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim;
+		then
+			log_Message "Completed vim-plug install"
+		else
+			log_Message "Unable to complete vim-plug install" "WARN"
+		fi
 	fi
 	if command -v nvim &>/dev/null;
 	then
@@ -559,24 +600,35 @@ function alacritty_Setup() {
 		local fontPath="$userDir/.local/share/fonts/Meslo/"
 		local fontZIPPath="$userDir/.local/share/fonts/Meslo.zip"
 	fi
-	if curl -fLo "$fontZIPPath" --create-dirs https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip;
+	if [[ -d "$fontPath" ]] && ls "$fontPath"/*.ttf &>/dev/null;
+	then
+		log_Message "MesloLGL Nerd Font Mono already installed"
+	elif curl -fLo "$fontZIPPath" --create-dirs https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip;
 	then
 		log_Message "Installing MesloLGL Nerd Font Mono"
-		unzip "$fontZIPPath" -d "$fontPath"
+		unzip -o "$fontZIPPath" -d "$fontPath"
 	else
 		log_Message "Unable to locate MesloLGL Nerd Font Mono" "WARN"
 	fi
-	if curl -fLo "$userDir/.config/alacritty/master.zip" https://github.com/dracula/alacritty/archive/master.zip;
+	if [[ -d "$userDir/.config/alacritty/alacritty-master" ]];
+	then
+		log_Message "Alacritty Dracula theme already installed"
+	elif curl -fLo "$userDir/.config/alacritty/master.zip" https://github.com/dracula/alacritty/archive/master.zip;
 	then
 		log_Message "Installing Alacritty Dracula theme"
-		unzip "$userDir/.config/alacritty/master.zip" -d "$userDir/.config/alacritty/"
+		unzip -o "$userDir/.config/alacritty/master.zip" -d "$userDir/.config/alacritty/"
 	else
 		log_Message "Unable to locate Alacritty Dracula theme" "WARN"
 	fi
 	if [[ -f "$scriptDir/alacritty.toml" ]];
 	then
-		log_Message "Copying alacritty.toml to config folder"
-		cp "$scriptDir/alacritty.toml" "$userDir/.config/alacritty/"
+		if cmp -s "$scriptDir/alacritty.toml" "$userDir/.config/alacritty/alacritty.toml";
+		then
+			log_Message "alacritty.toml already up to date"
+		else
+			log_Message "Copying alacritty.toml to config folder"
+			cp "$scriptDir/alacritty.toml" "$userDir/.config/alacritty/"
+		fi
 	else
 		log_Message "Unable to copy alacritty.toml to config folder" "WARN"
 	fi
@@ -604,7 +656,7 @@ function main() {
 
 	case "$osCheck" in
 		'arch')
-			printf "XDG_DATA_DIR=\"/usr/local/share:/usr/share\"\n" | sudo tee -a /etc/environment
+			grep -q 'XDG_DATA_DIR' /etc/environment 2>/dev/null || printf "XDG_DATA_DIR=\"/usr/local/share:/usr/share\"\n" | sudo tee -a /etc/environment
 			if [[ ! -f "$userDir/.bashrc" ]];
 			then
 				/usr/bin/touch "$userDir/.bashrc"
