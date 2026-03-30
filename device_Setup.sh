@@ -267,7 +267,7 @@ function textField_Dialog() {
 		textFieldDialog=$(/usr/bin/osascript <<OOP
 		try
 			set promptString to "$promptString"
-			set iconPath to "$effectiveIconPath"
+			set iconPath to "$activeIcon"
 			set dialogTitle to "$dialogTitle"
 			set dialogResult to (display dialog promptString buttons {"Cancel", "OK"} default button "OK" with answer default answer "" with icon POSIX file iconPath with title dialogTitle giving up after 900)
 			set buttonChoice to button returned of dialogResult
@@ -313,7 +313,7 @@ function binary_Dialog() {
 		binDialog=$(/usr/bin/osascript <<OOP
 		try
 			set promptString to "$promptString"
-			set iconPath to "$effectiveIconPath"
+			set iconPath to "$activeIcon"
 			set dialogTitle to "$dialogTitle"
 			set dialogResult to (display dialog promptString buttons {"Cancel", "OK"} default button "OK" with icon POSIX file iconPath with title dialogTitle giving up after 900)
 			set buttonChoice to button returned of dialogResult
@@ -525,6 +525,14 @@ function neovim_Setup() {
 	fi
 	if command -v nvim &>/dev/null;
 	then
+		if nvim -c 'PlugInstall';
+		then
+			log_Message "Neovim plugins installed"
+		else
+			log_Message "Unable to install Neovim plugins, install plugins manually" "WARN"
+			log_Message ":PlugInstall"
+		fi
+		
 		if nvim -c 'CocInstall -sync coc-sh coc-clangd coc-sourcekit|q';
 		then
 			log_Message "Neovim extensions installed"
@@ -533,7 +541,8 @@ function neovim_Setup() {
 			log_Message ":CocInstall coc-sh coc-clangd coc-sourcekit"
 		fi
 	else
-		log_Message "Unable to locate nvim, add nvim extensions manually" "WARN"
+		log_Message "Unable to locate nvim, add nvim plugins and extensions manually" "WARN"
+		log_Message ":PlugInstall"
 		log_Message ":CocInstall coc-sh coc-clangd coc-sourcekit"
 	fi
 	log_Message "Completed Neovim setup"
@@ -642,7 +651,7 @@ function main() {
 		'macOS')
 			if ! check_Icon;
 			then
-				alert_Dialog "Missing required icon files!"
+				alert_Dialog "Missing required icon file!"
 				log_Message "Exiting for no icon" "ERROR"
 				exit 1
 			fi
