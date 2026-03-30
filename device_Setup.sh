@@ -584,6 +584,9 @@ function alacritty_Setup() {
 }
 
 function main() {
+	/usr/bin/caffeinate -d &
+    caffeinatePID=$!
+    trap "kill $caffeinatePID" EXIT INT TERM HUP
     if [[ -w "$logFile" ]];
     then
         printf "Log: $(date "+%F %T") Beginning Device Setup script\n" | tee "$logFile"
