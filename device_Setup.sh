@@ -7,7 +7,7 @@
 ### - Configure neovim		   ###
 ##################################
 
-readonly archInstallArray=("alacritty" "dmenu" "fastfetch" "flatpak" "git" "github-cli" "htop" "i3-wm" "i3lock" "i3status" "jq" "man" "neovim" "nitrogen" "nodejs" "ranger" "remmina" "tmux" "tree" "tuned" "unzip" "wl-clipboard" "zip")
+readonly archInstallArray=("alacritty" "dmenu" "fastfetch" "flatpak" "git" "github-cli" "htop" "i3-wm" "i3lock" "i3status" "jq" "man" "neovim" "nitrogen" "nodejs" "ranger" "remmina" "shutter" "tmux" "tree" "tuned" "unzip" "wl-clipboard" "zip")
 readonly flatpakInstallArray=("com.brave.Browser" "com.discordapp.Discord" "com.github.tchx84.Flatseal" "io.gitlab.librewolf-community" "com.rustdesk.RustDesk" "org.signal.Signal" "com.spotify.Client")
 readonly macOSInstallArray=("fastfetch" "gh" "git" "jq" "neofetch" "neovim" "node" "ranger" "tmux" "tree")
 readonly macOSInstallCaskArray=("alacritty" "discord" "firefox" "google-chrome" "imazing-profile-editor" "librewolf" "mullvadvpn" "pppc-utility" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
