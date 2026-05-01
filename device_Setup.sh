@@ -11,6 +11,7 @@ readonly archInstallArray=("alacritty" "dmenu" "fastfetch" "flatpak" "git" "gith
 readonly flatpakInstallArray=("com.brave.Browser" "com.discordapp.Discord" "com.github.tchx84.Flatseal" "io.gitlab.librewolf-community" "com.rustdesk.RustDesk" "org.signal.Signal" "com.spotify.Client")
 readonly macOSInstallArray=("fastfetch" "gh" "git" "jq" "neofetch" "neovim" "node" "ranger" "tmux" "tree")
 readonly macOSInstallCaskArray=("alacritty" "discord" "firefox" "google-chrome" "imazing-profile-editor" "librewolf" "mullvadvpn" "pppc-utility" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
+readonly rhelInstallArray=("curl" "git" "neovim" "tmux" "tree" "unzip" "vim-enhanced")
 readonly scriptDir="$(dirname "$0")"
 readonly userDir="$HOME"
 readonly genericIconPath='/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/Everyone.icns'
@@ -39,8 +40,14 @@ function check_OS() {
 		osCheck='arch'
 	elif [[ -f '/usr/bin/dnf' ]];
 	then
-		log_Message "Fedora Linux"
-		osCheck='fedora'
+		if [[ -f '/etc/fedora-release' ]];
+		then
+			log_Message "Fedora Linux"
+			osCheck='fedora'
+		else
+			log_Message "RHEL Linux"
+			osCheck='rhel'
+		fi
 	elif [[ -f '/usr/sbin/sysadminctl' ]];
 	then
 		log_Message "macOS"
@@ -188,6 +195,109 @@ function arch_PackageInstall() {
 function fedora_Install() {
 	log_Message "Beginning package install with dnf"
 	printf "WIP\n"
+	log_Message "Completed installing packages with dnf"
+}
+
+function rhel_ConfigFiles() {
+	local dnfConf='/etc/dnf/dnf.conf'
+	if [ -f "$dnfConf" ];
+	then
+		log_Message "Attempting to alter dnf.conf"
+		if grep -q '^max_parallel_downloads' "$dnfConf";
+		then
+			log_Message "Parallel downloads already set"
+		elif printf 'max_parallel_downloads=10\n' | sudo tee -a "$dnfConf" > /dev/null;
+		then
+			log_Message "Set parallel downloads"
+		else
+			log_Message "Unable to set parallel downloads" "WARN"
+		fi
+		if grep -q '^fastestmirror' "$dnfConf";
+		then
+			log_Message "Fastestmirror already set"
+		elif printf 'fastestmirror=True\n' | sudo tee -a "$dnfConf" > /dev/null;
+		then
+			log_Message "Set fastestmirror"
+		else
+			log_Message "Unable to set fastestmirror" "WARN"
+		fi
+		log_Message "Completed altering dnf.conf"
+	else
+		log_Message "Unable to locate dnf.conf at $dnfConf" "WARN"
+	fi
+
+	log_Message "Checking EPEL repository"
+	if /usr/bin/rpm -q epel-release &>/dev/null;
+	then
+		log_Message "EPEL already enabled"
+	else
+		local rhelMajor="$(/usr/bin/rpm -E %rhel)"
+		log_Message "Installing EPEL repository for EL${rhelMajor}"
+		if sudo /usr/bin/dnf install --nogpgcheck -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${rhelMajor}.noarch.rpm";
+		then
+			log_Message "Completed installing EPEL repository"
+		else
+			log_Message "Unable to install EPEL repository" "WARN"
+		fi
+	fi
+
+	log_Message "Checking CRB repository"
+	if /usr/bin/dnf repolist enabled 2>/dev/null | grep -qi 'crb\|codeready';
+	then
+		log_Message "CRB already enabled"
+	elif [[ -x '/usr/bin/crb' ]];
+	then
+		log_Message "Enabling CRB via crb"
+		if sudo /usr/bin/crb enable;
+		then
+			log_Message "Completed enabling CRB"
+		else
+			log_Message "Unable to enable CRB" "WARN"
+		fi
+	elif [[ -x '/usr/sbin/subscription-manager' ]];
+	then
+		log_Message "Enabling CRB via subscription-manager"
+		if sudo /usr/sbin/subscription-manager repos --enable "codeready-builder-for-rhel-$(/usr/bin/rpm -E %rhel)-$(/usr/bin/uname -m)-rpms";
+		then
+			log_Message "Completed enabling CRB"
+		else
+			log_Message "Unable to enable CRB" "WARN"
+		fi
+	else
+		log_Message "Unable to locate crb or subscription-manager to enable CRB" "WARN"
+	fi
+
+	log_Message "Checking RPM Fusion repositories"
+	if /usr/bin/rpm -q rpmfusion-free-release &>/dev/null && /usr/bin/rpm -q rpmfusion-nonfree-release &>/dev/null;
+	then
+		log_Message "RPM Fusion already enabled"
+	else
+		local rhelMajor="$(/usr/bin/rpm -E %rhel)"
+		log_Message "Installing RPM Fusion (free + nonfree) for EL${rhelMajor}"
+		if sudo /usr/bin/dnf install --nogpgcheck -y \
+			"https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-${rhelMajor}.noarch.rpm" \
+			"https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-${rhelMajor}.noarch.rpm";
+		then
+			log_Message "Completed installing RPM Fusion"
+		else
+			log_Message "Unable to install RPM Fusion" "WARN"
+		fi
+	fi
+}
+
+# Install packages from rhelInstallArray that are not currently installed
+function rhel_PackageInstall() {
+	log_Message "Beginning package install with dnf"
+	for packageInstall in "${rhelInstallArray[@]}";
+	do
+		if ! /usr/bin/rpm -q "$packageInstall" &> /dev/null;
+		then
+			log_Message "Installing $packageInstall"
+			sudo /usr/bin/dnf install -y "$packageInstall"
+		else
+			log_Message "Skipping $packageInstall, already installed"
+		fi
+	done
 	log_Message "Completed installing packages with dnf"
 }
 
@@ -699,6 +809,17 @@ function main() {
 			fi
 			fedora_Install
 			flatpak_Install
+			configrc_Setup "bashrc"
+			neovim_Setup
+			alacritty_Setup
+			;;
+		'rhel')
+			if [[ ! -f "$userDir/.bashrc" ]];
+			then
+				/usr/bin/touch "$userDir/.bashrc"
+			fi
+			rhel_ConfigFiles
+			rhel_PackageInstall
 			configrc_Setup "bashrc"
 			neovim_Setup
 			alacritty_Setup

@@ -1,6 +1,6 @@
 # Device Setup
 
-Idempotent setup script for macOS, Arch Linux, and Fedora (WIP) devices.
+Idempotent setup script for macOS, Arch Linux, RHEL/clones, and Fedora (WIP) devices.
 
 ## What it does
 
@@ -34,4 +34,5 @@ A log file is written to `~/Desktop/device_Setup.log`.
 |---|---|---|
 | Arch Linux | pacman + flatpak | Supported |
 | macOS | Homebrew | Supported |
+| RHEL / Rocky / AlmaLinux / CentOS | dnf | Supported (config-focused) |
 | Fedora | dnf + flatpak | WIP |
