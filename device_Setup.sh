@@ -377,6 +377,63 @@ function rhel_AlacrittySrcInstall() {
 	log_Message "Completed Alacritty source build"
 }
 
+# Configure GNOME keybindings for RHEL
+function rhel_GnomeKeybindings() {
+    if [[ -z "$DBUS_SESSION_BUS_ADDRESS" ]];
+    then
+        log_Message "No D-Bus session detected, skipping GNOME keybindings" "WARN"
+        return 0
+    fi
+
+    log_Message "Configuring GNOME keybindings"
+
+    local WM="org.gnome.desktop.wm.keybindings"
+    local MUTTER="org.gnome.mutter.keybindings"
+    local SHELL="org.gnome.shell.keybindings"
+    local MEDIA="org.gnome.settings-daemon.plugins.media-keys"
+    local CUSTOM="org.gnome.settings-daemon.plugins.media-keys.custom-keybinding"
+    local CUSTOM_PATH="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
+
+    gsettings set "$WM" close "['<Super>q']"
+    gsettings set "$WM" maximize "@as []"
+    gsettings set "$WM" toggle-maximized "['<Super>f']"
+    gsettings set "$WM" move-to-workspace-1 "['<Shift><Super>1']"
+    gsettings set "$WM" move-to-workspace-2 "['<Shift><Super>2']"
+    gsettings set "$WM" move-to-workspace-3 "['<Shift><Super>3']"
+    gsettings set "$WM" move-to-workspace-4 "['<Shift><Super>4']"
+    gsettings set "$WM" switch-to-workspace-1 "['<Super>1']"
+    gsettings set "$WM" switch-to-workspace-2 "['<Super>2']"
+    gsettings set "$WM" switch-to-workspace-3 "['<Super>3']"
+    gsettings set "$WM" switch-to-workspace-4 "['<Super>4']"
+    gsettings set "$WM" switch-to-workspace-left "['<Control>Left']"
+    gsettings set "$WM" switch-to-workspace-right "['<Control>Right']"
+    gsettings set "$WM" switch-input-source "@as []"
+    gsettings set "$WM" switch-input-source-backward "@as []"
+
+    gsettings set "$MUTTER" toggle-tiled-left "['<Super>Left']"
+    gsettings set "$MUTTER" toggle-tiled-right "['<Super>Right']"
+
+    gsettings set org.gnome.mutter.wayland.keybindings restore-shortcuts "@as []"
+
+    gsettings set "$SHELL" screenshot "['<Shift><Control><Super>3']"
+    gsettings set "$SHELL" screenshot-window "['<Shift><Control><Super>4']"
+    gsettings set "$SHELL" show-screenshot-ui "['<Shift><Control><Super>5']"
+    gsettings set "$SHELL" switch-to-application-1 "@as []"
+    gsettings set "$SHELL" switch-to-application-2 "@as []"
+    gsettings set "$SHELL" switch-to-application-3 "@as []"
+    gsettings set "$SHELL" switch-to-application-4 "@as []"
+
+    gsettings set "$MEDIA" logout "['<Shift><Super>q']"
+    gsettings set "$MEDIA" screensaver "['<Control><Super>q']"
+    gsettings set "$MEDIA" custom-keybindings "['${CUSTOM_PATH}']"
+
+    gsettings set "${CUSTOM}:${CUSTOM_PATH}" name 'alacritty'
+    gsettings set "${CUSTOM}:${CUSTOM_PATH}" command '/usr/local/bin/alacritty'
+    gsettings set "${CUSTOM}:${CUSTOM_PATH}" binding '<Super>Return'
+
+    log_Message "Completed GNOME keybinding configuration"
+}
+
 # Install flatpaks from flatpakInstallArray, including Rustdesk
 function flatpak_Install() {
 	log_Message "Beginning install with flatpak"
@@ -902,6 +959,7 @@ function main() {
 			rhel_ConfigFiles
 			rhel_PackageInstall
             rhel_AlacrittySrcInstall
+            rhel_GnomeKeybindings
 			configrc_Setup "bashrc"
 			neovim_Setup
 			alacritty_Setup
