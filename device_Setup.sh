@@ -777,7 +777,7 @@ function main() {
 			configrc_Setup "bashrc"
 			neovim_Setup
 			alacritty_Setup
-			if $(tuned-adm --version &>/dev/null);
+			if tuned-adm --version &>/dev/null;
 			then
 				log_Message "Checking device type to set tuned-adm profile"
 				sudo /usr/bin/systemctl enable tuned --now
@@ -840,9 +840,9 @@ function main() {
 			then
 				log_Message "Device not renamed" "WARN"
 			else
-				/usr/sbin/scutil --set ComputerName $textFieldDialog
-				/usr/sbin/scutil --set LocalHostName $textFieldDialog
-				/usr/sbin/scutil --set HostName $textFieldDialog
+				/usr/sbin/scutil --set ComputerName "$textFieldDialog"
+				/usr/sbin/scutil --set LocalHostName "$textFieldDialog"
+				/usr/sbin/scutil --set HostName "$textFieldDialog"
 				log_Message "Device renamed: $textFieldDialog"
 			fi
 			macOS_HomebrewInstall
@@ -859,9 +859,9 @@ function main() {
 			;;
 	esac
 	log_Message "Setting Github email and name"
-	if $(git --version &>/dev/null);
+	if git --version &>/dev/null;
 	then
-		if git config --global user.email "129307974+archzaq@users.noreply.github.com";
+        if git config --global user.email "129307974+archzaq@users.noreply.github.com";
 		then
 			log_Message "Set Github email"
 		else
@@ -873,10 +873,25 @@ function main() {
 		else
 			log_Message "Unable to set Github user name" "WARN"
 		fi
-		log_Message "Completed setting Github email and name"
+        if git config --global gpg.format ssh;
+        then
+            log_Message "Set Github signing to SSH"
+        else
+            log_Message "Unable to set Github signing to SSH" "WARN"
+        fi
+        if git config --global user.signingkey ~/.ssh/id_ed25519.pub;
+        then
+            log_Message "Set Github signing key"
+        else
+            log_Message "Unable to set Github signing key" "WARN"
+        fi
 	else
 		log_Message "Unable to locate Git command" "WARN"
 	fi
+    log_Message "Create an SSH key with ssh-keygen -t ed25519 -C 'name'"
+    log_Message "Add the key to your keychain with ssh-add ~/.ssh/id_ed25519"
+    log_Message "Add public SSH key to Github signing"
+    log_Message "Clone repo with git clone git@github.com:repo/repo.git"
 	log_Message "Exiting!"
 	exit 0
 }
