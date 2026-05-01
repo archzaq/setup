@@ -403,6 +403,7 @@ function configrc_Setup() {
 		grep -q "alias lla='ls -la --color=auto'" "$userDir/.$1" || printf "alias lla='ls -la --color=auto'\n" >> "$userDir/.$1"
 		grep -q "alias scripts='cd ~/Github && ll'" "$userDir/.$1" || printf "alias scripts='cd ~/Github && ll'\n" >> "$userDir/.$1"
 		grep -q "export EDITOR=/usr/bin/nvim" "$userDir/.$1" || printf "export EDITOR=/usr/bin/nvim\n" >> "$userDir/.$1"
+		grep -q "export TERMINAL=/usr/local/bin/alacritty" "$userDir/.$1" || printf "export TERMINAL=/usr/local/bin/alacritty\n" >> "$userDir/.$1"
 	else
 		log_Message "Unable to locate $1" "WARN"
 	fi
