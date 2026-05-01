@@ -11,7 +11,7 @@ readonly archInstallArray=("alacritty" "dmenu" "fastfetch" "flatpak" "git" "gith
 readonly flatpakInstallArray=("com.brave.Browser" "com.discordapp.Discord" "com.github.tchx84.Flatseal" "io.gitlab.librewolf-community" "com.rustdesk.RustDesk" "org.signal.Signal" "com.spotify.Client")
 readonly macOSInstallArray=("fastfetch" "gh" "git" "jq" "neofetch" "neovim" "node" "ranger" "tmux" "tree")
 readonly macOSInstallCaskArray=("alacritty" "discord" "firefox" "google-chrome" "imazing-profile-editor" "librewolf" "mullvadvpn" "pppc-utility" "rustdesk" "signal" "spotify" "stats" "suspicious-package" "ticktick")
-readonly rhelInstallArray=("curl" "git" "neovim" "tmux" "tree" "unzip" "vim-enhanced")
+readonly rhelInstallArray=("cargo" "cmake" "curl" "freetype-devel" "fontconfig-devel" "libxcb-devel" "libxkbcommon-devel" "git" "neovim" "tmux" "tree" "unzip" "vim-enhanced")
 readonly scriptDir="$(dirname "$0")"
 readonly userDir="$HOME"
 readonly genericIconPath='/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/Everyone.icns'
@@ -299,6 +299,82 @@ function rhel_PackageInstall() {
 		fi
 	done
 	log_Message "Completed installing packages with dnf"
+}
+
+# Build and install Alacritty from source
+function rhel_AlacrittySrcInstall() {
+	log_Message "Beginning Alacritty source build"
+	if command -v alacritty &>/dev/null;
+	then
+		log_Message "Alacritty already installed"
+		return 0
+	fi
+
+	local buildDir="$userDir/Github/alacritty"
+	if [[ -d "$buildDir" ]];
+	then
+		log_Message "Alacritty repo already cloned"
+	else
+		log_Message "Cloning Alacritty repository"
+		if ! git clone https://github.com/alacritty/alacritty.git "$buildDir";
+		then
+			log_Message "Unable to clone Alacritty repository" "WARN"
+			return 1
+		fi
+	fi
+
+	log_Message "Installing Development Tools group"
+	if ! sudo /usr/bin/dnf groupinstall -y "Development Tools";
+	then
+		log_Message "Unable to install Development Tools" "WARN"
+		return 1
+	fi
+
+	log_Message "Building Alacritty"
+	if ! cargo build --release --manifest-path "$buildDir/Cargo.toml";
+	then
+		log_Message "Unable to build Alacritty" "WARN"
+		return 1
+	fi
+
+	log_Message "Installing Alacritty binary"
+	if sudo cp "$buildDir/target/release/alacritty" /usr/local/bin/;
+	then
+		log_Message "Copied alacritty to /usr/local/bin"
+	else
+		log_Message "Unable to copy alacritty to /usr/local/bin" "WARN"
+		return 1
+	fi
+
+	log_Message "Installing Alacritty desktop entry"
+	if [[ -f "$buildDir/extra/logo/alacritty-term.svg" ]];
+	then
+		sudo cp "$buildDir/extra/logo/alacritty-term.svg" /usr/share/pixmaps/Alacritty.svg
+	fi
+	if [[ -f "$buildDir/extra/linux/Alacritty.desktop" ]];
+	then
+		sudo desktop-file-install "$buildDir/extra/linux/Alacritty.desktop"
+		sudo update-desktop-database
+		log_Message "Installed desktop entry"
+	else
+		log_Message "Unable to locate desktop entry file" "WARN"
+	fi
+
+	log_Message "Installing Alacritty terminfo"
+	if ! infocmp alacritty &>/dev/null;
+	then
+		if [[ -f "$buildDir/extra/alacritty.info" ]];
+		then
+			sudo tic -xe alacritty,alacritty-direct "$buildDir/extra/alacritty.info"
+			log_Message "Installed terminfo"
+		else
+			log_Message "Unable to locate terminfo file" "WARN"
+		fi
+	else
+		log_Message "Terminfo already installed"
+	fi
+
+	log_Message "Completed Alacritty source build"
 }
 
 # Install flatpaks from flatpakInstallArray, including Rustdesk
@@ -746,9 +822,13 @@ function alacritty_Setup() {
 }
 
 function main() {
-	/usr/bin/caffeinate -d &
-    caffeinatePID=$!
-    trap "kill $caffeinatePID" EXIT INT TERM HUP
+    if command -v /usr/bin/caffeinate &>/dev/null;
+    then
+        /usr/bin/caffeinate -d &
+        caffeinatePID=$!
+        trap "kill $caffeinatePID" EXIT INT TERM HUP
+    fi
+
     if [[ -w "$logFile" ]];
     then
         printf "Log: $(date "+%F %T") Beginning Device Setup script\n" | tee "$logFile"
@@ -820,6 +900,7 @@ function main() {
 			fi
 			rhel_ConfigFiles
 			rhel_PackageInstall
+            rhel_AlacrittySrcInstall
 			configrc_Setup "bashrc"
 			neovim_Setup
 			alacritty_Setup
