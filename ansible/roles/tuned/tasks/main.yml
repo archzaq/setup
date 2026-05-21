@@ -1,0 +1,36 @@
+---
+- name: Locate tuned-adm
+  ansible.builtin.command: command -v tuned-adm
+  register: tuned_check
+  changed_when: false
+  failed_when: false
+
+- name: Enable and start tuned service
+  ansible.builtin.systemd:
+    name: tuned
+    enabled: true
+    state: started
+  become: true
+  when: tuned_check.rc == 0
+
+- name: Detect chassis type
+  ansible.builtin.command: hostnamectl chassis
+  register: chassis
+  changed_when: false
+  failed_when: false
+  when: tuned_check.rc == 0
+
+- name: Set tuned profile by chassis
+  ansible.builtin.command:
+    cmd: "tuned-adm profile {{ tuned_profile }}"
+  vars:
+    tuned_profile: >-
+      {{ 'laptop-battery-powersave' if (chassis.stdout | default('')) == 'laptop'
+         else 'desktop' if (chassis.stdout | default('')) == 'desktop'
+         else '' }}
+  become: true
+  changed_when: true
+  failed_when: false
+  when:
+    - tuned_check.rc == 0
+    - tuned_profile | length > 0

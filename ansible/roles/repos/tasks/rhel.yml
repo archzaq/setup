@@ -1,0 +1,61 @@
+---
+- name: Set max_parallel_downloads in dnf.conf
+  community.general.ini_file:
+    path: /etc/dnf/dnf.conf
+    section: main
+    option: max_parallel_downloads
+    value: '10'
+    no_extra_spaces: true
+    mode: '0644'
+  become: true
+
+- name: Set fastestmirror in dnf.conf
+  community.general.ini_file:
+    path: /etc/dnf/dnf.conf
+    section: main
+    option: fastestmirror
+    value: 'True'
+    no_extra_spaces: true
+    mode: '0644'
+  become: true
+
+- name: Install EPEL
+  ansible.builtin.dnf:
+    name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
+    state: present
+    disable_gpg_check: true
+  become: true
+
+- name: Enable CRB (RHEL 9+ via dnf config-manager)
+  ansible.builtin.command:
+    cmd: dnf config-manager --set-enabled crb
+  become: true
+  register: crb_enable
+  changed_when: "'enabling' in (crb_enable.stdout | default('') | lower) or crb_enable.rc == 0"
+  failed_when: false
+  when: ansible_distribution_major_version | int >= 9
+
+- name: Enable PowerTools (RHEL 8 via dnf config-manager)
+  ansible.builtin.command:
+    cmd: dnf config-manager --set-enabled powertools
+  become: true
+  changed_when: true
+  failed_when: false
+  when: ansible_distribution_major_version | int == 8
+
+- name: Try CRB via subscription-manager (only on subscribed RHEL)
+  ansible.builtin.command:
+    cmd: "subscription-manager repos --enable codeready-builder-for-rhel-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}-rpms"
+  become: true
+  changed_when: true
+  failed_when: false
+  when: ansible_distribution == 'RedHat'
+
+- name: Install RPM Fusion (free + nonfree) for EL
+  ansible.builtin.dnf:
+    name:
+      - "https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-{{ ansible_distribution_major_version }}.noarch.rpm"
+      - "https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-{{ ansible_distribution_major_version }}.noarch.rpm"
+    state: present
+    disable_gpg_check: true
+  become: true

@@ -1,0 +1,11 @@
+---
+- name: Refresh pacman sync db
+  community.general.pacman:
+    update_cache: true
+  become: true
+
+- name: Install pacman packages
+  community.general.pacman:
+    name: "{{ arch_packages }}"
+    state: present
+  become: true

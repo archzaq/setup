@@ -1,0 +1,15 @@
+---
+rhel_packages:
+  - cargo
+  - cmake
+  - curl
+  - freetype-devel
+  - fontconfig-devel
+  - libxcb-devel
+  - libxkbcommon-devel
+  - git
+  - neovim
+  - tmux
+  - tree
+  - unzip
+  - vim-enhanced

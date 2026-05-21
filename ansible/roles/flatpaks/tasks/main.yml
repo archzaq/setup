@@ -1,0 +1,21 @@
+---
+- name: Ensure flatpak package is installed (Fedora)
+  ansible.builtin.dnf:
+    name: flatpak
+    state: present
+  become: true
+  when: os_class == 'fedora'
+
+- name: Add Flathub remote (user)
+  community.general.flatpak_remote:
+    name: flathub
+    state: present
+    flatpakrepo_url: https://dl.flathub.org/repo/flathub.flatpakrepo
+    method: user
+
+- name: Install Flatpak applications (user)
+  community.general.flatpak:
+    name: "{{ flatpak_apps }}"
+    state: present
+    method: user
+    remote: flathub

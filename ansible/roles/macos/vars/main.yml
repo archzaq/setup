@@ -1,0 +1,28 @@
+---
+brew_packages:
+  - fastfetch
+  - gh
+  - git
+  - jq
+  - neofetch
+  - neovim
+  - node
+  - ranger
+  - tmux
+  - tree
+
+brew_casks:
+  - alacritty
+  - discord
+  - firefox
+  - google-chrome
+  - imazing-profile-editor
+  - librewolf
+  - mullvadvpn
+  - pppc-utility
+  - rustdesk
+  - signal
+  - spotify
+  - stats
+  - suspicious-package
+  - ticktick

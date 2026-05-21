@@ -1,0 +1,9 @@
+---
+flatpak_apps:
+  - com.brave.Browser
+  - com.discordapp.Discord
+  - com.github.tchx84.Flatseal
+  - io.gitlab.librewolf-community
+  - com.rustdesk.RustDesk
+  - org.signal.Signal
+  - com.spotify.Client

@@ -1,0 +1,84 @@
+---
+- name: Check if alacritty is already on PATH
+  ansible.builtin.command: command -v alacritty
+  register: alacritty_present
+  changed_when: false
+  failed_when: false
+
+- name: Build and install Alacritty from source
+  when: alacritty_present.rc != 0
+  block:
+    - name: Clone alacritty repository
+      ansible.builtin.git:
+        repo: https://github.com/alacritty/alacritty.git
+        dest: "{{ ansible_user_dir }}/GitHub/alacritty"
+        update: false
+
+    - name: Install Development Tools group
+      ansible.builtin.dnf:
+        name: "@Development Tools"
+        state: present
+      become: true
+
+    - name: cargo build --release
+      ansible.builtin.command:
+        cmd: cargo build --release
+        chdir: "{{ ansible_user_dir }}/GitHub/alacritty"
+        creates: "{{ ansible_user_dir }}/GitHub/alacritty/target/release/alacritty"
+
+    - name: Install alacritty binary to /usr/local/bin
+      ansible.builtin.copy:
+        src: "{{ ansible_user_dir }}/GitHub/alacritty/target/release/alacritty"
+        dest: /usr/local/bin/alacritty
+        remote_src: true
+        mode: '0755'
+      become: true
+
+    - name: Stat desktop assets
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "{{ ansible_user_dir }}/GitHub/alacritty/extra/logo/alacritty-term.svg"
+        - "{{ ansible_user_dir }}/GitHub/alacritty/extra/linux/Alacritty.desktop"
+        - "{{ ansible_user_dir }}/GitHub/alacritty/extra/alacritty.info"
+      register: alacritty_assets
+
+    - name: Install pixmap
+      ansible.builtin.copy:
+        src: "{{ ansible_user_dir }}/GitHub/alacritty/extra/logo/alacritty-term.svg"
+        dest: /usr/share/pixmaps/Alacritty.svg
+        remote_src: true
+        mode: '0644'
+      become: true
+      when: alacritty_assets.results[0].stat.exists
+      failed_when: false
+
+    - name: Install desktop entry
+      ansible.builtin.command:
+        cmd: "desktop-file-install {{ ansible_user_dir }}/GitHub/alacritty/extra/linux/Alacritty.desktop"
+      become: true
+      changed_when: true
+      failed_when: false
+      when: alacritty_assets.results[1].stat.exists
+
+    - name: Update desktop database
+      ansible.builtin.command: update-desktop-database
+      become: true
+      changed_when: false
+      failed_when: false
+
+    - name: Check terminfo entry
+      ansible.builtin.command: infocmp alacritty
+      register: terminfo_check
+      changed_when: false
+      failed_when: false
+
+    - name: Install terminfo
+      ansible.builtin.command:
+        cmd: "tic -xe alacritty,alacritty-direct {{ ansible_user_dir }}/GitHub/alacritty/extra/alacritty.info"
+      become: true
+      changed_when: true
+      failed_when: false
+      when:
+        - terminfo_check.rc != 0
+        - alacritty_assets.results[2].stat.exists

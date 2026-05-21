@@ -1,0 +1,16 @@
+---
+- name: Ensure i3 config directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ ansible_user_dir }}/.config/i3"
+    - "{{ ansible_user_dir }}/.config/i3status"
+
+- name: Install i3 config (only if missing)
+  ansible.builtin.copy:
+    src: i3-config
+    dest: "{{ ansible_user_dir }}/.config/i3/config"
+    force: false
+    mode: '0644'

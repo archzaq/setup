@@ -1,0 +1,26 @@
+---
+arch_packages:
+  - alacritty
+  - dmenu
+  - fastfetch
+  - flatpak
+  - git
+  - github-cli
+  - htop
+  - i3-wm
+  - i3lock
+  - i3status
+  - jq
+  - man
+  - neovim
+  - nitrogen
+  - nodejs
+  - ranger
+  - remmina
+  - shutter
+  - tmux
+  - tree
+  - tuned
+  - unzip
+  - wl-clipboard
+  - zip

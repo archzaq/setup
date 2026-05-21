@@ -1,0 +1,7 @@
+---
+- name: Add shell aliases and env vars
+  ansible.builtin.include_tasks: aliases.yml
+
+- name: Configure zsh
+  ansible.builtin.include_tasks: zsh.yml
+  when: os_class == 'macos'

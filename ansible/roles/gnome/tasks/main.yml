@@ -1,0 +1,54 @@
+---
+- name: Detect D-Bus
+  ansible.builtin.set_fact:
+    has_dbus: "{{ (lookup('env', 'DBUS_SESSION_BUS_ADDRESS') | length) > 0 }}"
+
+- name: Note skipped GNOME (no D-Bus session)
+  ansible.builtin.debug:
+    msg: "No D-Bus session detected, skipping GNOME keybindings"
+  when: not has_dbus
+
+- name: Apply GNOME keybindings via dconf
+  community.general.dconf:
+    key: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+  loop:
+    # org.gnome.desktop.wm.keybindings
+    - { key: "/org/gnome/desktop/wm/keybindings/close",                          value: "['<Super>q']" }
+    - { key: "/org/gnome/desktop/wm/keybindings/maximize",                       value: "@as []" }
+    - { key: "/org/gnome/desktop/wm/keybindings/toggle-maximized",               value: "['<Super>f']" }
+    - { key: "/org/gnome/desktop/wm/keybindings/move-to-workspace-1",            value: "['<Shift><Super>1']" }
+    - { key: "/org/gnome/desktop/wm/keybindings/move-to-workspace-2",            value: "['<Shift><Super>2']" }
+    - { key: "/org/gnome/desktop/wm/keybindings/move-to-workspace-3",            value: "['<Shift><Super>3']" }
+    - { key: "/org/gnome/desktop/wm/keybindings/move-to-workspace-4",            value: "['<Shift><Super>4']" }
+    - { key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-1",          value: "['<Super>1']" }
+    - { key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-2",          value: "['<Super>2']" }
+    - { key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-3",          value: "['<Super>3']" }
+    - { key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-4",          value: "['<Super>4']" }
+    - { key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-left",       value: "['<Control>Left']" }
+    - { key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-right",      value: "['<Control>Right']" }
+    - { key: "/org/gnome/desktop/wm/keybindings/switch-input-source",            value: "@as []" }
+    - { key: "/org/gnome/desktop/wm/keybindings/switch-input-source-backward",   value: "@as []" }
+    # org.gnome.mutter.keybindings
+    - { key: "/org/gnome/mutter/keybindings/toggle-tiled-left",                  value: "['<Super>Left']" }
+    - { key: "/org/gnome/mutter/keybindings/toggle-tiled-right",                 value: "['<Super>Right']" }
+    # org.gnome.mutter.wayland.keybindings
+    - { key: "/org/gnome/mutter/wayland/keybindings/restore-shortcuts",          value: "@as []" }
+    # org.gnome.shell.keybindings
+    - { key: "/org/gnome/shell/keybindings/screenshot",                          value: "['<Shift><Control><Super>3']" }
+    - { key: "/org/gnome/shell/keybindings/screenshot-window",                   value: "['<Shift><Control><Super>4']" }
+    - { key: "/org/gnome/shell/keybindings/show-screenshot-ui",                  value: "['<Shift><Control><Super>5']" }
+    - { key: "/org/gnome/shell/keybindings/switch-to-application-1",             value: "@as []" }
+    - { key: "/org/gnome/shell/keybindings/switch-to-application-2",             value: "@as []" }
+    - { key: "/org/gnome/shell/keybindings/switch-to-application-3",             value: "@as []" }
+    - { key: "/org/gnome/shell/keybindings/switch-to-application-4",             value: "@as []" }
+    # org.gnome.settings-daemon.plugins.media-keys
+    - { key: "/org/gnome/settings-daemon/plugins/media-keys/logout",             value: "['<Shift><Super>q']" }
+    - { key: "/org/gnome/settings-daemon/plugins/media-keys/screensaver",        value: "['<Control><Super>q']" }
+    - { key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings", value: "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/']" }
+    # custom0 keybinding for alacritty
+    - { key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/name",    value: "'alacritty'" }
+    - { key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/command", value: "'{{ alacritty_path }}'" }
+    - { key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/binding", value: "'<Super>Return'" }
+  when: has_dbus

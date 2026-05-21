@@ -1,0 +1,13 @@
+---
+- name: Add aliases and env vars to rc file
+  ansible.builtin.blockinfile:
+    path: "{{ ansible_user_dir }}/.{{ 'zshrc' if os_class == 'macos' else 'bashrc' }}"
+    marker: "### {mark} DEVICE_SETUP ALIASES ###"
+    block: |
+      alias ll='ls -l --color=auto'
+      alias lla='ls -la --color=auto'
+      alias scripts='cd ~/GitHub && ll'
+      export EDITOR={{ nvim_path }}
+      export TERMINAL={{ alacritty_path }}
+    create: true
+    mode: '0644'

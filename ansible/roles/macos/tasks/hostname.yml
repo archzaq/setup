@@ -1,0 +1,15 @@
+---
+- name: Set ComputerName
+  ansible.builtin.command: "scutil --set ComputerName {{ macos_device_name | quote }}"
+  become: true
+  changed_when: true
+
+- name: Set LocalHostName
+  ansible.builtin.command: "scutil --set LocalHostName {{ macos_device_name | quote }}"
+  become: true
+  changed_when: true
+
+- name: Set HostName
+  ansible.builtin.command: "scutil --set HostName {{ macos_device_name | quote }}"
+  become: true
+  changed_when: true

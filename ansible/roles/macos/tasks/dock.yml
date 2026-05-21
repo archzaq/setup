@@ -1,0 +1,57 @@
+---
+- name: Read current Dock persistent-apps
+  ansible.builtin.command: defaults read "{{ ansible_user_dir }}/Library/Preferences/com.apple.dock.plist" persistent-apps
+  register: dock_plist
+  changed_when: false
+  failed_when: false
+
+- name: Backup Dock plist
+  ansible.builtin.copy:
+    src: "{{ ansible_user_dir }}/Library/Preferences/com.apple.dock.plist"
+    dest: "{{ ansible_user_dir }}/Library/Preferences/com.apple.dock.OGbackup.plist"
+    remote_src: true
+    force: false
+    mode: '0644'
+  when: "'Alacritty' not in (dock_plist.stdout | default(''))"
+
+- name: Strip default Dock entries down
+  ansible.builtin.shell: |
+    plist="{{ ansible_user_dir }}/Library/Preferences/com.apple.dock.plist"
+    count=$(defaults read "$plist" persistent-apps 2>/dev/null | grep -c 'file-label' || true)
+    if [[ "$count" -gt 2 ]]; then
+      for _ in $(seq 3 "$count"); do
+        plutil -remove 'persistent-apps.2' "$plist" || break
+      done
+    fi
+  args:
+    executable: /bin/bash
+  changed_when: true
+  when: "'Alacritty' not in (dock_plist.stdout | default(''))"
+
+- name: Orient Dock to the left
+  community.general.osx_defaults:
+    domain: com.apple.dock
+    key: orientation
+    type: string
+    value: left
+
+- name: Restart Dock
+  ansible.builtin.command: killall Dock
+  changed_when: false
+  failed_when: false
+
+- name: Set menu bar icon spacing
+  community.general.osx_defaults:
+    domain: NSGlobalDomain
+    key: NSStatusItemSpacing
+    type: int
+    value: 10
+    host: currentHost
+
+- name: Set menu bar selection padding
+  community.general.osx_defaults:
+    domain: NSGlobalDomain
+    key: NSStatusItemSelectionPadding
+    type: int
+    value: 8
+    host: currentHost

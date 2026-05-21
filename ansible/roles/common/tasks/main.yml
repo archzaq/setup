@@ -1,0 +1,64 @@
+---
+- name: Ensure ~/Apps
+  ansible.builtin.file:
+    path: "{{ ansible_user_dir }}/Apps"
+    state: directory
+    mode: '0755'
+
+- name: Ensure ~/GitHub
+  ansible.builtin.file:
+    path: "{{ ansible_user_dir }}/GitHub"
+    state: directory
+    mode: '0755'
+
+- name: Ensure ~/.config subdirectories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ ansible_user_dir }}/.config"
+    - "{{ ansible_user_dir }}/.config/nvim/autoload"
+    - "{{ ansible_user_dir }}/.config/alacritty"
+
+# Ensure arch can find user installed .desktop files in the search
+- name: Ensure XDG_DATA_DIR in /etc/environment (Arch)
+  ansible.builtin.lineinfile:
+    path: /etc/environment
+    line: 'XDG_DATA_DIR="/usr/local/share:/usr/share"'
+    regexp: '^XDG_DATA_DIR='
+    create: true
+    mode: '0644'
+  become: true
+  when: os_class == 'arch'
+
+- name: Ensure rc file exists
+  ansible.builtin.copy:
+    content: ""
+    dest: "{{ ansible_user_dir }}/.{{ 'zshrc' if os_class == 'macos' else 'bashrc' }}"
+    force: false
+    mode: '0644'
+
+- name: Set git user.email
+  community.general.git_config:
+    name: user.email
+    scope: global
+    value: "{{ git_user_email }}"
+
+- name: Set git user.name
+  community.general.git_config:
+    name: user.name
+    scope: global
+    value: "{{ git_user_name }}"
+
+- name: Set git gpg.format to ssh
+  community.general.git_config:
+    name: gpg.format
+    scope: global
+    value: ssh
+
+- name: Set git user.signingkey
+  community.general.git_config:
+    name: user.signingkey
+    scope: global
+    value: "{{ git_signing_key }}"

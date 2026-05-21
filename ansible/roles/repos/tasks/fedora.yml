@@ -1,0 +1,29 @@
+---
+- name: Set max_parallel_downloads in dnf.conf
+  community.general.ini_file:
+    path: /etc/dnf/dnf.conf
+    section: main
+    option: max_parallel_downloads
+    value: '10'
+    no_extra_spaces: true
+    mode: '0644'
+  become: true
+
+- name: Set fastestmirror in dnf.conf
+  community.general.ini_file:
+    path: /etc/dnf/dnf.conf
+    section: main
+    option: fastestmirror
+    value: 'True'
+    no_extra_spaces: true
+    mode: '0644'
+  become: true
+
+- name: Install RPM Fusion (free + nonfree) for Fedora
+  ansible.builtin.dnf:
+    name:
+      - "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ ansible_distribution_major_version }}.noarch.rpm"
+      - "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ ansible_distribution_major_version }}.noarch.rpm"
+    state: present
+    disable_gpg_check: true
+  become: true

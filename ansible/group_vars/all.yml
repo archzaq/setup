@@ -1,0 +1,13 @@
+---
+# Override with ansible-playbook ansible/site.yml -e "install_casks=false"
+
+git_user_email: "129307974+archzaq@users.noreply.github.com"
+git_user_name: "archzaq"
+git_signing_key: "{{ ansible_user_dir }}/.ssh/id_ed25519.pub"
+install_casks: true
+
+# Empty means the macos hostname role is skipped. Filled by vars_prompt at
+# play start, or overridable with -e "macos_device_name=mymac".
+macos_device_name: ""
+
+script_dir: "{{ playbook_dir | dirname }}"

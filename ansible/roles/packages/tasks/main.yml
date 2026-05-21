@@ -1,0 +1,6 @@
+---
+- name: Load OS specific package vars
+  ansible.builtin.include_vars: "{{ os_class }}.yml"
+
+- name: Include OS specific package tasks
+  ansible.builtin.include_tasks: "{{ os_class }}.yml"

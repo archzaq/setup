@@ -1,0 +1,16 @@
+---
+- name: Include Homebrew install
+  ansible.builtin.include_tasks: homebrew.yml
+
+- name: Include brew packages and casks
+  ansible.builtin.include_tasks: packages.yml
+
+- name: Include Dock and menu bar tasks
+  ansible.builtin.include_tasks: dock.yml
+
+- name: Rename device
+  ansible.builtin.include_tasks: hostname.yml
+  when: macos_device_name | default('') | length > 0
+
+- name: Open Alacritty for Gatekeeper approval
+  ansible.builtin.include_tasks: alacritty_security.yml

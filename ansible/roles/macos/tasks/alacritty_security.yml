@@ -1,0 +1,28 @@
+---
+- name: Stat /Applications/Alacritty.app
+  ansible.builtin.stat:
+    path: /Applications/Alacritty.app
+  register: alacritty_app
+
+- name: Install Alacritty cask if app missing
+  community.general.homebrew_cask:
+    name: alacritty
+    state: present
+  environment:
+    PATH: "/opt/homebrew/bin:/usr/local/bin:{{ ansible_env.PATH }}"
+  when: not alacritty_app.stat.exists
+
+- name: Open Alacritty for Gatekeeper
+  ansible.builtin.command: open /Applications/Alacritty.app
+  changed_when: false
+  failed_when: false
+
+- name: Open Privacy & Security preferences
+  ansible.builtin.command:
+    cmd: >-
+      open
+      {{ 'x-apple.systempreferences:com.apple.preference.security'
+         if ansible_distribution_version is version('13.0', '<')
+         else 'x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension' }}
+  changed_when: false
+  failed_when: false

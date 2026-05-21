@@ -1,0 +1,111 @@
+---
+- name: Device setup (local)
+  hosts: localhost
+  gather_facts: true
+  become: false
+
+  pre_tasks:
+    - name: Normalize OS class
+      ansible.builtin.set_fact:
+        os_class: >-
+          {{ 'arch'   if ansible_distribution == 'Archlinux'
+             else 'fedora' if ansible_distribution == 'Fedora'
+             else 'rhel'   if ansible_os_family == 'RedHat'
+             else 'macos'  if ansible_os_family == 'Darwin'
+             else 'unknown' }}
+      tags: always
+
+    - name: Fail on unknown OS
+      ansible.builtin.fail:
+        msg: "Unsupported OS: {{ ansible_distribution }}"
+      when: os_class == 'unknown'
+      tags: always
+
+    - name: Show detected OS
+      ansible.builtin.debug:
+        msg: "Detected {{ ansible_distribution }} {{ ansible_distribution_version }} ({{ os_class }} / {{ ansible_architecture }})"
+      tags: always
+
+    - name: Compute per-OS binary paths
+      ansible.builtin.set_fact:
+        nvim_path: >-
+          {{ '/opt/homebrew/bin/nvim' if (os_class == 'macos' and ansible_architecture == 'arm64')
+             else '/usr/local/bin/nvim' if os_class == 'macos'
+             else '/usr/bin/nvim' }}
+        alacritty_path: >-
+          {{ '/opt/homebrew/bin/alacritty' if (os_class == 'macos' and ansible_architecture == 'arm64')
+             else '/usr/local/bin/alacritty' if os_class == 'macos'
+             else '/usr/local/bin/alacritty' if os_class == 'rhel'
+             else '/usr/bin/alacritty' }}
+      tags: always
+
+    - name: Prompt for macOS device name
+      ansible.builtin.pause:
+        prompt: "macOS device name (Enter to skip rename)"
+        echo: true
+      register: device_name_prompt
+      when:
+        - os_class == 'macos'
+        - (macos_device_name | default('')) | length == 0
+      tags: always
+
+    - name: Capture device name from prompt
+      ansible.builtin.set_fact:
+        macos_device_name: "{{ device_name_prompt.user_input | default('') }}"
+      when:
+        - os_class == 'macos'
+        - device_name_prompt is defined
+        - not (device_name_prompt is skipped)
+      tags: always
+
+  roles:
+    - role: common
+      tags: [common]
+
+    - role: repos
+      tags: [repos]
+      when: os_class in ['arch', 'rhel', 'fedora']
+
+    - role: packages
+      tags: [packages]
+      when: os_class in ['arch', 'rhel', 'fedora']
+
+    - role: flatpaks
+      tags: [flatpaks]
+      when: os_class in ['arch', 'fedora']
+
+    - role: macos
+      tags: [macos]
+      when: os_class == 'macos'
+
+    - role: shell
+      tags: [shell]
+
+    - role: neovim
+      tags: [neovim]
+
+    - role: alacritty
+      tags: [alacritty]
+
+    - role: i3
+      tags: [i3]
+      when: os_class == 'arch'
+
+    - role: tuned
+      tags: [tuned]
+      when: os_class == 'arch'
+
+    - role: gnome
+      tags: [gnome]
+      when: os_class in ['rhel', 'fedora']
+
+  post_tasks:
+    - name: Wrap-up notes
+      ansible.builtin.debug:
+        msg:
+          - "Device setup complete."
+          - "Create an SSH key:  ssh-keygen -t ed25519 -C 'name'"
+          - "Add to keychain:    ssh-add ~/.ssh/id_ed25519"
+          - "Add public SSH key to GitHub signing keys."
+          - "Clone via SSH:      git clone git@github.com:repo/repo.git"
+      tags: always

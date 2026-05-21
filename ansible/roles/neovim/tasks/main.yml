@@ -1,0 +1,38 @@
+---
+- name: Ensure nvim config and autoload dirs
+  ansible.builtin.file:
+    path: "{{ ansible_user_dir }}/.config/nvim/autoload"
+    state: directory
+    mode: '0755'
+
+- name: Install init.vim
+  ansible.builtin.copy:
+    src: init.vim
+    dest: "{{ ansible_user_dir }}/.config/nvim/init.vim"
+    mode: '0644'
+
+- name: Install vim-plug
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+    dest: "{{ ansible_user_dir }}/.config/nvim/autoload/plug.vim"
+    mode: '0644'
+
+- name: Locate nvim
+  ansible.builtin.command: command -v nvim
+  register: nvim_check
+  changed_when: false
+  failed_when: false
+
+- name: Run :PlugInstall
+  ansible.builtin.command:
+    cmd: nvim --headless -c 'PlugInstall --sync' -c 'qa'
+  changed_when: true
+  failed_when: false
+  when: nvim_check.rc == 0
+
+- name: Run :CocInstall (sync)
+  ansible.builtin.command:
+    cmd: nvim --headless -c 'CocInstall -sync coc-sh coc-clangd coc-sourcekit' -c 'qa'
+  changed_when: true
+  failed_when: false
+  when: nvim_check.rc == 0

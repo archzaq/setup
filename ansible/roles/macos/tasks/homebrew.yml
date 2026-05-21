@@ -1,0 +1,30 @@
+---
+- name: Locate brew binary
+  ansible.builtin.command: command -v brew
+  register: brew_check
+  changed_when: false
+  failed_when: false
+
+- name: Install Homebrew
+  ansible.builtin.shell: |
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  when: brew_check.rc != 0
+  args:
+    creates: /opt/homebrew/bin/brew
+
+- name: Add Homebrew shellenv to .zprofile (Apple Silicon)
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_user_dir }}/.zprofile"
+    line: 'eval "$(/opt/homebrew/bin/brew shellenv)"'
+    create: true
+    mode: '0644'
+  when: ansible_architecture == 'arm64'
+
+- name: Install Rosetta (Apple Silicon)
+  ansible.builtin.command:
+    cmd: softwareupdate --install-rosetta --agree-to-license
+    creates: /Library/Apple/usr/share/rosetta/rosetta
+  become: true
+  when: ansible_architecture == 'arm64'
+  changed_when: true
+  failed_when: false

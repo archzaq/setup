@@ -1,0 +1,15 @@
+---
+- name: Set ParallelDownloads in pacman.conf
+  ansible.builtin.lineinfile:
+    path: /etc/pacman.conf
+    regexp: '^#?\s*ParallelDownloads\s*='
+    line: 'ParallelDownloads = 5'
+  become: true
+
+- name: Enable ILoveCandy loading icons
+  ansible.builtin.lineinfile:
+    path: /etc/pacman.conf
+    insertafter: '^ParallelDownloads = 5'
+    regexp: '^ILoveCandy$'
+    line: 'ILoveCandy'
+  become: true

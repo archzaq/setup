@@ -1,0 +1,62 @@
+---
+- name: Source-build Alacritty (RHEL only)
+  ansible.builtin.include_tasks: source_build.yml
+  when: os_class == 'rhel'
+
+- name: Compute font directory
+  ansible.builtin.set_fact:
+    meslo_font_dir: >-
+      {{ (ansible_user_dir + '/Library/Fonts/Meslo')
+         if os_class == 'macos'
+         else (ansible_user_dir + '/.local/share/fonts/Meslo') }}
+
+- name: Ensure font dir exists
+  ansible.builtin.file:
+    path: "{{ meslo_font_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Find any existing Meslo ttf
+  ansible.builtin.find:
+    paths: "{{ meslo_font_dir }}"
+    patterns: '*.ttf'
+  register: meslo_existing
+
+- name: Download MesloLGL Nerd Font zip
+  ansible.builtin.get_url:
+    url: https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip
+    dest: "{{ meslo_font_dir }}.zip"
+    mode: '0644'
+  when: (meslo_existing.matched | default(0)) == 0
+
+- name: Unzip MesloLGL Nerd Font
+  ansible.builtin.unarchive:
+    src: "{{ meslo_font_dir }}.zip"
+    dest: "{{ meslo_font_dir }}"
+    remote_src: true
+  when: (meslo_existing.matched | default(0)) == 0
+
+- name: Stat Dracula theme dir
+  ansible.builtin.stat:
+    path: "{{ ansible_user_dir }}/.config/alacritty/alacritty-master"
+  register: dracula_dir
+
+- name: Download Dracula theme zip
+  ansible.builtin.get_url:
+    url: https://github.com/dracula/alacritty/archive/master.zip
+    dest: "{{ ansible_user_dir }}/.config/alacritty/master.zip"
+    mode: '0644'
+  when: not dracula_dir.stat.exists
+
+- name: Unzip Dracula theme
+  ansible.builtin.unarchive:
+    src: "{{ ansible_user_dir }}/.config/alacritty/master.zip"
+    dest: "{{ ansible_user_dir }}/.config/alacritty/"
+    remote_src: true
+  when: not dracula_dir.stat.exists
+
+- name: Install alacritty.toml
+  ansible.builtin.copy:
+    src: alacritty.toml
+    dest: "{{ ansible_user_dir }}/.config/alacritty/alacritty.toml"
+    mode: '0644'

@@ -1,0 +1,11 @@
+---
+- name: Refresh dnf cache
+  ansible.builtin.dnf:
+    update_cache: true
+  become: true
+
+- name: Install Fedora packages
+  ansible.builtin.dnf:
+    name: "{{ fedora_packages }}"
+    state: present
+  become: true
