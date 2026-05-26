@@ -5,6 +5,7 @@
     state: present
   environment:
     PATH: "/opt/homebrew/bin:/usr/local/bin:{{ ansible_env.PATH }}"
+  ignore_errors: true
 
 - name: Install Homebrew casks
   community.general.homebrew_cask:
@@ -13,3 +14,4 @@
   environment:
     PATH: "/opt/homebrew/bin:/usr/local/bin:{{ ansible_env.PATH }}"
   when: install_casks | bool
+  ignore_errors: true
