@@ -15,4 +15,4 @@ style = "Regular"
 [[keyboard.bindings]]
 key = "Return"
 mods = "Shift"
-chars = "\r"
+chars = "\u001B\r"
