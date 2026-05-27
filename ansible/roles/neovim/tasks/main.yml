@@ -11,6 +11,13 @@
     dest: "{{ ansible_user_dir }}/.config/nvim/init.vim"
     mode: '0644'
 
+- name: Install coc-settings.json
+  ansible.builtin.copy:
+    content: |
+      {"suggest.noselect": true}
+    dest: "{{ ansible_user_dir }}/.config/nvim/coc-settings.json"
+    mode: '0644'
+
 - name: Install vim-plug
   ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
