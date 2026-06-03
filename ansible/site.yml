@@ -89,7 +89,7 @@
 
     - role: i3
       tags: [i3]
-      when: os_class == 'arch'
+      when: os_class in ['arch', 'rhel', 'fedora']
 
     - role: tuned
       tags: [tuned]
