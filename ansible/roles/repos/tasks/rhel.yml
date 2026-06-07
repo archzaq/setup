@@ -54,4 +54,3 @@
   failed_when: false
   when: ansible_distribution == 'RedHat'
 
-
