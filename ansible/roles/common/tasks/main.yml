@@ -11,6 +11,13 @@
     state: directory
     mode: '0755'
 
+- name: Ensure ~/Obsidian
+  ansible.builtin.file:
+    path: "{{ ansible_user_dir }}/Obsidian"
+    state: directory
+    mode: '0755'
+  when: os_class in ['arch', 'rhel', 'fedora']
+
 - name: Ensure ~/.config subdirectories
   ansible.builtin.file:
     path: "{{ item }}"
