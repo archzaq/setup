@@ -72,7 +72,7 @@
 
     - role: flatpaks
       tags: [flatpaks]
-      when: os_class in ['arch', 'fedora']
+      when: os_class in ['arch', 'rhel', 'fedora']
 
     - role: macos
       tags: [macos]
