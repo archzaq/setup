@@ -3,8 +3,8 @@
 ############################
 ###  Author:  Zac Reeves ###
 ###  Created: 05-20-26   ###
-###  Updated: 05-20-26   ###
-###  Version: 1.0        ###
+###  Updated: 06-08-26   ###
+###  Version: 1.1        ###
 ############################
 
 set -Eeuo pipefail
@@ -17,6 +17,7 @@ logFile="$HOME/Desktop/device_Setup.log"
 extraArgs=()
 caffeinatePID=""
 
+# Provide user with info about the program
 usage() {
     cat <<EOF
 Usage:
@@ -48,6 +49,7 @@ function log_Message() {
 	fi
 }
 
+# Detect OS to determine ansible install method
 detect_os() {
     if [[ -f /usr/bin/pacman ]];
     then
@@ -66,6 +68,7 @@ detect_os() {
     fi
 }
 
+# Ensure Homebrew is installed for macOS
 ensure_brew_macos() {
     if command -v brew &>/dev/null;
     then
@@ -77,11 +80,13 @@ ensure_brew_macos() {
     if [[ -x /opt/homebrew/bin/brew ]];
     then
         eval "$(/opt/homebrew/bin/brew shellenv)"
-    elif [[ -x /usr/local/bin/brew ]]; then
+    elif [[ -x /usr/local/bin/brew ]];
+    then
         eval "$(/usr/local/bin/brew shellenv)"
     fi
 }
 
+# Ensure ansible is installed
 ensure_ansible() {
     if command -v ansible-playbook &>/dev/null;
     then
@@ -108,6 +113,7 @@ ensure_ansible() {
     esac
 }
 
+# Install ansible requirements
 install_collections() {
     if [[ -f "$playbookDir/requirements.yml" ]];
     then
@@ -116,6 +122,7 @@ install_collections() {
     fi
 }
 
+# Handle the arguments for the program, also passing args to ansible playbook
 parse_args() {
     while [[ $# -gt 0 ]];
     do
@@ -125,8 +132,15 @@ parse_args() {
                 [[ $# -gt 0 ]] || { printf "ERROR: --logfile requires a value\n" >&2; exit 1; }
                 logFile="$1"
                 ;;
-            -h|--help) usage; exit 0 ;;
-            --) shift; extraArgs+=("$@"); break ;;
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            --)
+                shift
+                extraArgs+=("$@")
+                break
+                ;;
             *)
                 printf "ERROR: unknown argument: %s\n" "$1" >&2
                 usage
