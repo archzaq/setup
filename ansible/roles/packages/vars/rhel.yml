@@ -13,3 +13,7 @@ rhel_packages:
   - tree
   - unzip
   - vim-enhanced
+  - clang-tools-extra
+  - command-line-assistant
+  - mpv
+  - fastfetch
